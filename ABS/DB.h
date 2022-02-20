@@ -9,7 +9,7 @@
 
 static const char* createRef = "CREATE TABLE IF NOT EXISTS `reference` (`device_id` INT NOT NULL UNIQUE, `device_name` TEXT NOT NULL, `device_in_use` BIT(1) NOT NULL DEFAULT '0', `device_location` TEXT, `device_costplace` TEXT, `device_next_checkup` INT DEFAULT NULL, PRIMARY KEY (`device_id`));";
 static const char* createDev = "CREATE TABLE IF NOT EXISTS `device` (`device_id` INT NOT NULL UNIQUE, `model` TEXT, `serial_number` INT, `supplier` TEXT, `manufacturer` TEXT, `purchase_date` INT, `warranty_date` INT, `department` TEXT, `costplace_name` TEXT, `administrator` TEXT, `replacement` TEXT, `has_log` BIT(1), `has_manual` BIT(1), `fitness_freq` INT, `internal_freq` INT, `last_internal_check` INT, `next_internal_check` INT, `external_company` TEXT, `external_freq` INT, `last_external_check` INT, `next_external_check` INT, `contract_desc` TEXT, `setup_date` INT, `decommission_date` INT, `wattage` FLOAT, PRIMARY KEY (`device_id`));";
-static const char* createLog = "CREATE TABLE IF NOT EXISTS `log` (`date` INT NOT NULL, `logger` TEXT NOT NULL, `log` TEXT, PRIMARY KEY (`date`));";
+static const char* createLog = "CREATE TABLE IF NOT EXISTS `log` (`date` INT NOT NULL, `logger` TEXT NOT NULL, `log` TEXT NOT NULL, PRIMARY KEY (`date`));";
 
 struct DeviceData {
 	// reference (also in device)
@@ -52,6 +52,11 @@ struct DeviceData {
 	int dateOfSetup;
 	int dateOfDecommissioning;
 	float wattage;
+
+	// log
+	std::vector<int> logDate; // DATE
+	std::vector<std::string> logLogger;
+	std::vector<std::string> logLog;
 };
 
 namespace DB {
@@ -337,8 +342,40 @@ public:
 			// close connection
 			sqlite3_close(connection);
 			connection = nullptr;
-			if (!isLoaded) { unloadDevice(); }
-			return isLoaded;
+			if (!isLoaded) { unloadDevice(); return false; }
+		}
+		// read data if it can be found into DeviceData
+		tmp = "db/logs/" + std::to_string(data.id) + ".db";
+		if (DB::createConnection(connection, tmp.c_str(), createDev)) {
+			// get data from database if there is any
+			sqlite3_stmt* stmt;
+			tmp = "SELECT date, logger, log FROM `log`";
+			sqlite3_prepare_v2(connection, tmp.c_str(), -1, &stmt, NULL);
+			int sc; // get sql code
+			while ((sc = sqlite3_step(stmt)) != SQLITE_DONE) {
+				data.id = sqlite3_column_int(stmt, 0);
+				// other device data is gained from reference list
+				if (sc == SQLITE_MISUSE) {
+					printf_s("Something went wrong while trying to load the device data for device_id=%i, error code for SQLITE_MISUSE (21) has been returned to the program...\n", id);
+					unloadDevice();
+					sqlite3_finalize(stmt);
+					sqlite3_close(connection);
+					return false;
+				}
+
+				// TODO: read out device log
+				data.logDate.push_back(sqlite3_column_int(stmt, 0));
+				data.logLogger.push_back(std::string((const char*)sqlite3_column_text(stmt, 1)));
+				data.logLog.push_back(std::string((const char*)sqlite3_column_text(stmt, 2)));
+
+				isLoaded = true;
+			}
+			sqlite3_finalize(stmt);
+
+			// close connection
+			sqlite3_close(connection);
+			connection = nullptr;
+			if (isLoaded) { return true; }
 		}
 		unloadDevice();
 		return false;
@@ -391,5 +428,10 @@ private:
 		data.dateOfSetup = 0; // date/string?
 		data.dateOfDecommissioning = 0; // date/string?
 		data.wattage = 0.0f;
+
+		// log
+		data.logDate.clear();
+		data.logLogger.clear();
+		data.logLog.clear();
 	}
 };

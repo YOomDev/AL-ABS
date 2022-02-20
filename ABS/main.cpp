@@ -551,6 +551,27 @@ int main(int, char**) {
 
                             ImGui::EndTable();
                         }
+
+                        ImGui::Text("Logs");
+                        if (ImGui::BeginTable("Status", 3, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            ImGui::TableSetupColumn("Date");
+                            ImGui::TableSetupColumn("Logger");
+                            ImGui::TableSetupColumn("Log");
+                            ImGui::TableHeadersRow();
+                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                            for (int i = 0; i < deviceMenu.data.logDate.size(); i++) {
+                                ImGui::TableNextColumn();
+                                ImGui::Text(std::to_string(deviceMenu.data.logDate[i]).c_str());
+                                ImGui::TableNextColumn();
+                                ImGui::Text(deviceMenu.data.logLogger[i].c_str());
+                                ImGui::TableNextColumn();
+                                ImGui::Text(deviceMenu.data.logLog[i].c_str());
+                            }
+
+                            ImGui::EndTable();
+                        }
+
                     } else { ImGui::Text("Could not find a device with that ID"); }
 
                     // Make states do the right thing
