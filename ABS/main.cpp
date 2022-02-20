@@ -217,7 +217,7 @@ int main(int, char**) {
             windowWidth = hwndSize.right - hwndSize.left;
 
             ImGui::SetNextWindowPos(ImVec2(0, 0));
-            ImGui::SetNextWindowSize(ImVec2(windowWidth/* - 200*/, windowHeight)); // change to size of window
+            ImGui::SetNextWindowSize(ImVec2(windowWidth-15, windowHeight-38)); // change to size of window
             ImGui::Begin("ABS", &done, flags | ImGuiWindowFlags_NoTitleBar);
 
             if (ImGui::BeginTabBar("TABS", NULL)) {
