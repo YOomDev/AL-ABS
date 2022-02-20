@@ -13,10 +13,6 @@
 //////////
 
 /*
-* BUG:
-* Filters for costplace are bugged: first and 4th (currently 4th is last) checkboxes cannot be unchecked
-* 
-* Scroll to bottom of devices list is not long enough, make sure this works
 * 
 * TODO:
 * Implement admin adding a device the normal way
@@ -54,6 +50,10 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 const char* getFrequencyNotation(int f) {
     return "0";
+}
+static void addDevice(int id) {
+    DeviceData t = { id, "test" + std::to_string(id%5), true, "VERW" + std::to_string(id % 7), std::to_string(id%8 + 40100), "device_type" + std::to_string(id % 7), 123, "companySupplier" + std::to_string(id % 8), "companyManufacturer" + std::to_string(id % 2), 0, 0, std::to_string(id % 15), "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 0.3f * (id % 200) + 20.0f};
+    DB::addDevice(t);
 }
 
 // Main code
@@ -167,11 +167,11 @@ int main(int, char**) {
 
         // Reload if needed
         if (reloadFilter) {
+            filterMenu.reload();
             costPlaces.clear();
             locations.clear();
             locations.push_back("Select All");
             costPlaces.push_back("Select All");
-            filterMenu.reload();
             current = filterMenu.id.size();
             // locations filter
             for (int i = 0; i < filterMenu.id.size(); i++) {
@@ -196,18 +196,9 @@ int main(int, char**) {
 
             locationFilter.clear();
             costplaceFilter.clear();
-            while (locationFilter.size() < locations.size() + 1) { locationFilter.push_back(1); }
-            while (costplaceFilter.size() < costPlaces.size() + 1) { costplaceFilter.push_back(1); }
+            while (locationFilter.size() < locations.size()) { locationFilter.push_back(1); }
+            while (costplaceFilter.size() < costPlaces.size()) { costplaceFilter.push_back(1); }
             reloadFilter = false;
-            if (filterMenu.id.size() == 0) {
-                for (int i = 0; i < 3000; i++) {
-                    name = "Device_" + std::to_string(i);
-                    loc = (i % 2 ? "VERW" : "OOST") + std::to_string(i % 5);
-                    cost = "401" + std::to_string((i % 30) + 10);
-
-                    // DB::addDevice(i, name, i % 2, loc, cost); // TODO: fix: implement DeviceData passthrough
-                }
-            }
         }
         
         {
@@ -270,14 +261,12 @@ int main(int, char**) {
                         // Cost place
                         ImGui::TableNextColumn();
                         for (int i = 0; i < costPlaces.size(); i++) {
-                            ImGui::Checkbox(costPlaces[i].c_str(), (bool*) &costplaceFilter.at(i));
+                            ImGui::Checkbox((costPlaces[i] + " ").c_str(), (bool*)&costplaceFilter.at(i));
                         }
 
                         // checkup
                         ImGui::TableNextColumn();
-                        ImGui::Text("TO BE IMPLEMENTED");
-                        // TODO
-                        
+                        ImGui::Text("TO BE IMPLEMENTED"); // TODO
                         
                         ImGui::EndTable();
                     }
@@ -585,8 +574,8 @@ int main(int, char**) {
                     ImGui::Text("Admin panel not implemented yet");
 
                     ImGui::Separator();
-                    if (ImGui::Button("Add device")) { adminInfo.id = current; DB::addDevice(adminInfo); current++; }
-                    if (ImGui::Button("Add 1000 devices")) { for (int i = 0; i < 1000; i++) { adminInfo.id = current; DB::addDevice(adminInfo); current++; } }
+                    if (ImGui::Button("Add device")) { addDevice(current); current++; }
+                    if (ImGui::Button("Add 1000 devices")) { for (int i = 0; i < 1000; i++) { addDevice(current); current++; } }
 
                     // TODO: add item adding to this page
 

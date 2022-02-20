@@ -344,7 +344,8 @@ public:
 			connection = nullptr;
 			if (!isLoaded) { unloadDevice(); return false; }
 		}
-		// read data if it can be found into DeviceData
+
+		// read data from device logs into DeviceData
 		tmp = "db/logs/" + std::to_string(data.id) + ".db";
 		if (DB::createConnection(connection, tmp.c_str(), createDev)) {
 			// get data from database if there is any
