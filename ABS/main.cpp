@@ -1,12 +1,9 @@
-#include "ImGui/imgui.h"
-#include "ImGui/backends/imgui_impl_dx9.h"
-#include "ImGui/backends/imgui_impl_win32.h"
-#include <d3d9.h>
-#include <tchar.h>
-#include <string>
-#include <vector>
-
-#include "DB.h"
+#include "ImGui/imgui.h" // ImGui functions
+#include "ImGui/backends/imgui_impl_dx9.h" // ImGui backend
+#include "ImGui/backends/imgui_impl_win32.h" // ImGui backend
+#include <d3d9.h> // Used for graphics device to display Dear ImGui
+#include <tchar.h> // ???
+#include "DB.h" // My database library
 
 //////////
 // TODO //
@@ -15,6 +12,7 @@
 /*
 * 
 * TODO:
+* Add DATE support for the database interactions: only need to change database types to BIGINT instead of INT
 * Implement admin adding a device the normal way
 * Implement admin removing a device
 * 
@@ -24,13 +22,13 @@
 // TODO END //
 //////////////
 
-enum YesNoAny {
+enum class YesNoAny {
     YES,
     NO,
     ANY
 };
 
-enum CurrentScreen {
+enum class CurrentScreen {
     FILTER,
     DEVICE,
     ADMIN,
@@ -48,9 +46,10 @@ void CleanupDeviceD3D();
 void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-const char* getFrequencyNotation(int f) {
-    return "0";
+static const char* getFrequencyNotation(int f) {
+    return "0"; // TODO
 }
+
 static void addDevice(int id) {
     DeviceData t = { id, "test" + std::to_string(id%5), true, "VERW" + std::to_string(id % 7), std::to_string(id%8 + 40100), "device_type" + std::to_string(id % 7), 123, "companySupplier" + std::to_string(id % 8), "companyManufacturer" + std::to_string(id % 2), 0, 0, std::to_string(id % 15), "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 0.3f * (id % 200) + 20.0f};
     DB::addDevice(t);
@@ -118,33 +117,31 @@ int main(int, char**) {
     bool done = false;
     bool noDeviceFound = false;
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-    CurrentScreen screen = FILTER;
+    CurrentScreen screen = CurrentScreen::FILTER;
     int w = 400, h = 400;
     bool login = false;
 
     // Filters
-    YesNoAny inUse = YES;
+    YesNoAny inUse = YesNoAny::ANY;
+    YesNoAny requiresCheckup = YesNoAny::ANY;
     std::vector<std::string> locations, costPlaces;
     std::vector<unsigned short> locationFilter, costplaceFilter;
-    //static const std::string stringANY = "*";
-    //std::string selectedLocation = stringANY, selectedCostPlace = stringANY;
     int windowWidth = 1280, windowHeight = 800;
     bool displayedDevices = false;
     bool isEnabled; // filter internal use only
     bool canDisplay; // filter internal use only
     
-    // reload bools
+    // Rendering bools
     bool recommendReload = false;
     bool loadAttempt = false;
     bool reloadFilter = true;
     bool shouldAdd = false;
 
     // Device info
-    DeviceData adminInfo {0, "test", true, "VERW", "40116", "device_type", 123, "companySupplier", "companyManufacturer", 0, 0, "50-WetChem", "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 1.0f};
+    DeviceData adminInfo;
 
     // TMP device add value
     int current = 0;
-    std::string name, loc, cost;
 
     while (!done) {
         // Poll and handle messages (inputs, window resize, etc.)
@@ -202,6 +199,8 @@ int main(int, char**) {
         }
         
         {
+            Date today;
+
             // Set window data
             GetWindowRect(hwnd, &hwndSize);
             windowHeight = hwndSize.bottom - hwndSize.top;
@@ -217,7 +216,7 @@ int main(int, char**) {
                     // Reload message //
                     ////////////////////
 
-                    if (screen != FILTER) { recommendReload = true; }
+                    if (screen != CurrentScreen::FILTER) { recommendReload = true; }
                     if (recommendReload) {
                         ImGui::Text("Something might have changed during your time in a different tab, we would like to recommend you to reload the database...");
                         if (ImGui::Button("Press this to reload")) { recommendReload = false; reloadFilter = true; }
@@ -228,7 +227,7 @@ int main(int, char**) {
                     // Filters //
                     /////////////
 
-                    if (ImGui::BeginTable("DevicesFound", 4, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                    if (ImGui::BeginTable("DevicesFilter", 4, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
                         //ImGui::TableSetupColumn("Device ID");
                         //ImGui::TableSetupColumn("Device name");
                         ImGui::TableSetupColumn("Is in use");
@@ -243,12 +242,12 @@ int main(int, char**) {
                         // In use
                         ImGui::TableNextColumn();
                         if (ImGui::BeginListBox("Is in use", ImVec2(50, 55))) {
-                            if (ImGui::Selectable("Yes", inUse == YES)) { inUse = YES; }
-                            if (inUse == YES) { ImGui::SetItemDefaultFocus(); }
-                            if (ImGui::Selectable("No", inUse == NO)) { inUse = NO; }
-                            if (inUse == NO) { ImGui::SetItemDefaultFocus(); }
-                            if (ImGui::Selectable("All", inUse == ANY)) { inUse = ANY; }
-                            if (inUse == ANY) { ImGui::SetItemDefaultFocus(); }
+                            if (ImGui::Selectable("Yes", inUse == YesNoAny::YES)) { inUse = YesNoAny::YES; }
+                            if (inUse == YesNoAny::YES) { ImGui::SetItemDefaultFocus(); }
+                            if (ImGui::Selectable("No", inUse == YesNoAny::NO)) { inUse = YesNoAny::NO; }
+                            if (inUse == YesNoAny::NO) { ImGui::SetItemDefaultFocus(); }
+                            if (ImGui::Selectable("All", inUse == YesNoAny::ANY)) { inUse = YesNoAny::ANY; }
+                            if (inUse == YesNoAny::ANY) { ImGui::SetItemDefaultFocus(); }
                             ImGui::EndListBox();
                         }
 
@@ -264,9 +263,17 @@ int main(int, char**) {
                             ImGui::Checkbox((costPlaces[i] + " ").c_str(), (bool*)&costplaceFilter.at(i));
                         }
 
-                        // checkup
+                        // Checkup
                         ImGui::TableNextColumn();
-                        ImGui::Text("TO BE IMPLEMENTED"); // TODO
+                        if (ImGui::BeginListBox("Requires checkup", ImVec2(50, 55))) {
+                            if (ImGui::Selectable("Yes ", requiresCheckup == YesNoAny::YES)) { requiresCheckup = YesNoAny::YES; }
+                            if (requiresCheckup == YesNoAny::YES) { ImGui::SetItemDefaultFocus(); }
+                            if (ImGui::Selectable("No ", requiresCheckup == YesNoAny::NO)) { requiresCheckup = YesNoAny::NO; }
+                            if (requiresCheckup == YesNoAny::NO) { ImGui::SetItemDefaultFocus(); }
+                            if (ImGui::Selectable("All ", requiresCheckup == YesNoAny::ANY)) { requiresCheckup = YesNoAny::ANY; }
+                            if (requiresCheckup == YesNoAny::ANY) { ImGui::SetItemDefaultFocus(); }
+                            ImGui::EndListBox();
+                        }
                         
                         ImGui::EndTable();
                     }
@@ -293,10 +300,10 @@ int main(int, char**) {
                         for (int i = 0; i < filterMenu.id.size(); i++) {
                             canDisplay = true;
 
-                            // in use
-                            if (inUse != ANY || inUse == YES ? !filterMenu.inUse[i] : filterMenu.inUse[i]) { canDisplay = false; }
+                            // In use
+                            if (inUse != YesNoAny::ANY ? (inUse == YesNoAny::YES ? !filterMenu.inUse[i] : filterMenu.inUse[i]) : false) { canDisplay = false; }
 
-                            // locations
+                            // Locations
                             if (!locationFilter[0]) {
                                 isEnabled = false;
                                 for (int j = 1; j < locations.size(); j++) {
@@ -307,7 +314,7 @@ int main(int, char**) {
                                 if (!isEnabled) { canDisplay = false; }
                             }
 
-                            // costplace
+                            // Costplace
                             if (!costplaceFilter[0]) {
                                 isEnabled = false;
                                 for (int j = 1; j < costPlaces.size(); j++) {
@@ -318,10 +325,10 @@ int main(int, char**) {
                                 if (!isEnabled) { canDisplay = false; }
                             }
 
-                            // checkup
-                            // TODO
+                            // Checkup
+                            if (requiresCheckup != YesNoAny::ANY ? (requiresCheckup == YesNoAny::YES ? filterMenu.nextCheckup[i] > today : filterMenu.nextCheckup[i] <= today) : false) { canDisplay = false; }
 
-                            // display
+                            // Display
                             if (canDisplay) {
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
                                 ImGui::TableNextColumn();
@@ -335,7 +342,8 @@ int main(int, char**) {
                                 ImGui::TableNextColumn();
                                 ImGui::Text((const char*)filterMenu.costplace[i].c_str());
                                 ImGui::TableNextColumn();
-                                ImGui::Text(std::to_string(filterMenu.nextCheckup[i]).c_str());
+                                bool bTmp = filterMenu.nextCheckup[i] <= today;
+                                ImGui::Checkbox(filterMenu.nextCheckup[i].asString().c_str(), &bTmp);
                                 displayedDevices = true;
                             }
                         }
@@ -358,11 +366,11 @@ int main(int, char**) {
                     }
 
                     // Make states do the right thing
-                    screen = FILTER;
+                    screen = CurrentScreen::FILTER;
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Device", deviceMenu.isLoaded ? nullptr : &deviceMenu.isLoaded, loadAttempt ? ImGuiTabItemFlags_SetSelected : NULL)) {
-                    if (screen != DEVICE) { recommendReload = true; loadAttempt = false; }
+                    if (screen != CurrentScreen::DEVICE) { recommendReload = true; loadAttempt = false; }
                     if (recommendReload) {
                         ImGui::Text("Something might have changed during your time in a different tab, we would like to recommend you to reload the selected device...");
                         if (ImGui::Button("Press this to reload")) { recommendReload = false; reloadFilter = true; }
@@ -374,7 +382,7 @@ int main(int, char**) {
                     ImGui::Separator();
                     
                     ImGui::Text("Device");
-                    if (deviceMenu.isLoaded) { // TODO: finalize
+                    if (deviceMenu.isLoaded) {
                         if (ImGui::BeginTable("Device", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
                             ImGui::TableSetupColumn("Info");
                             ImGui::TableSetupColumn("Value");
@@ -400,11 +408,11 @@ int main(int, char**) {
                             ImGui::TableNextColumn();
                             ImGui::Text("Date of purchase");
                             ImGui::TableNextColumn();
-                            ImGui::Text("0"); // TODO
+                            ImGui::Text(deviceMenu.data.purchaseDate.asString().c_str());
                             ImGui::TableNextColumn();
                             ImGui::Text("End of warranty");
                             ImGui::TableNextColumn();
-                            ImGui::Text("0"); // TODO
+                            ImGui::Text(deviceMenu.data.warrantyDate.asString().c_str());
                             ImGui::TableNextColumn();
                             ImGui::Text("Manufacturer");
                             ImGui::TableNextColumn();
@@ -455,11 +463,11 @@ int main(int, char**) {
                                 ImGui::TableNextColumn();
                                 ImGui::Text("Last internal check");
                                 ImGui::TableNextColumn();
-                                ImGui::Text("0"); // TODO
+                                ImGui::Text(deviceMenu.data.lastInternalCheck.asString().c_str());
                                 ImGui::TableNextColumn();
                                 ImGui::Text("Next internal check");
                                 ImGui::TableNextColumn();
-                                ImGui::Text("0"); // TODO
+                                ImGui::Text(deviceMenu.data.nextInternalCheck.asString().c_str());
                             }
 
                             ImGui::EndTable();
@@ -484,11 +492,11 @@ int main(int, char**) {
                                 ImGui::TableNextColumn();
                                 ImGui::Text("Last external check");
                                 ImGui::TableNextColumn();
-                                ImGui::Text("0"); // TODO
+                                ImGui::Text(deviceMenu.data.lastExternalCheck.asString().c_str());
                                 ImGui::TableNextColumn();
                                 ImGui::Text("Next external check");
                                 ImGui::TableNextColumn();
-                                ImGui::Text("0"); // TODO
+                                ImGui::Text(deviceMenu.data.nextExternalCheck.asString().c_str());
                                 ImGui::TableNextColumn();
                                 ImGui::Text("Contract description");
                                 ImGui::TableNextColumn();
@@ -508,7 +516,7 @@ int main(int, char**) {
                             ImGui::TableNextColumn();
                             ImGui::Text("Useability check frequency");
                             ImGui::TableNextColumn();
-                            ImGui::Text("0"); // TODO
+                            ImGui::Text(getFrequencyNotation(0)); // TODO
 
                             ImGui::EndTable();
                         }
@@ -528,15 +536,15 @@ int main(int, char**) {
                             ImGui::TableNextColumn();
                             ImGui::Text("Setup date");
                             ImGui::TableNextColumn();
-                            ImGui::Text("0"); // TODO
+                            ImGui::Text(deviceMenu.data.dateOfSetup.asString().c_str());
                             ImGui::TableNextColumn();
                             ImGui::Text("Decommissioning date");
                             ImGui::TableNextColumn();
-                            ImGui::Text("0"); // TODO
+                            ImGui::Text(deviceMenu.data.dateOfDecommissioning.asString().c_str());
                             ImGui::TableNextColumn();
                             ImGui::Text("Wattage");
                             ImGui::TableNextColumn();
-                            ImGui::Text(std::to_string(deviceMenu.data.wattage).c_str()); // TODO
+                            ImGui::Text(std::to_string(deviceMenu.data.wattage).c_str());
 
                             ImGui::EndTable();
                         }
@@ -551,11 +559,11 @@ int main(int, char**) {
 
                             for (int i = 0; i < deviceMenu.data.logDate.size(); i++) {
                                 ImGui::TableNextColumn();
-                                ImGui::Text(std::to_string(deviceMenu.data.logDate[i]).c_str());
+                                ImGui::Text(deviceMenu.data.logDate[i].asString().c_str());
                                 ImGui::TableNextColumn();
                                 ImGui::Text(deviceMenu.data.logLogger[i].c_str());
                                 ImGui::TableNextColumn();
-                                ImGui::Text(deviceMenu.data.logLog[i].c_str());
+                                ImGui::TextWrapped(deviceMenu.data.logLog[i].c_str());
                             }
 
                             ImGui::EndTable();
@@ -564,11 +572,20 @@ int main(int, char**) {
                     } else { ImGui::Text("Could not find a device with that ID"); }
 
                     // Make states do the right thing
-                    screen = DEVICE;
+                    screen = CurrentScreen::DEVICE;
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Admin", nullptr, NULL)) {
-                    if (screen != ADMIN) { login = false; }
+                    if (screen != CurrentScreen::ADMIN) { login = false; }
+
+                    login = true; // TMP
+
+                    if (login) {
+                        // TODO: show full service screen
+                    }
+                    else {
+                        // TODO: show login screen
+                    }
 
                     // TMP
                     ImGui::Text("Admin panel not implemented yet");
@@ -580,17 +597,25 @@ int main(int, char**) {
                     // TODO: add item adding to this page
 
                     // Make states do the right thing
-                    screen = ADMIN;
+                    screen = CurrentScreen::ADMIN;
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Service", nullptr, NULL)) {
-                    if (screen != SERVICE) { login = false; }
+                    if (screen != CurrentScreen::SERVICE) { login = false; }
 
-                    // TMP
-                    ImGui::Text("Service panel not implemented yet");
+                    login = true; // TMP
+
+                    if (login) {
+                        // TODO: show full service screen
+
+                        // TMP
+                        ImGui::Text("Service panel not implemented yet");
+                    } else {
+                        // TODO: show login screen
+                    }
 
                     // Make states do the right thing
-                    screen = SERVICE;
+                    screen = CurrentScreen::SERVICE;
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();
