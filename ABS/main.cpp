@@ -583,6 +583,7 @@ int main(int, char**) {
                     screen = CurrentScreen::ADMIN;
                     ImGui::EndTabItem();
                 }
+                /*
                 if (ImGui::BeginTabItem("Service", nullptr, NULL)) {
                     //if (screen != CurrentScreen::SERVICE) {}
 
@@ -592,6 +593,7 @@ int main(int, char**) {
                     screen = CurrentScreen::SERVICE;
                     ImGui::EndTabItem();
                 }
+                */
                 ImGui::EndTabBar();
             }
             ImGui::End();
