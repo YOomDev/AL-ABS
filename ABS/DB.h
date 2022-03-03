@@ -17,9 +17,11 @@ static const char* createLog = "CREATE TABLE IF NOT EXISTS `log` (`date` BIGINT 
 
 struct Date {
 private:
-	time_t t = 0;
 	tm d;
+
 public:
+	time_t t = 0; // only use in frequencyDateOffset
+
 	Date() { update(time(0)); };
 	Date(time_t e) { update(e); };
 	Date(int year, int month, int day) {
@@ -29,7 +31,6 @@ public:
 		finalize();
 	}
 	~Date() {};
-
 
 private:
 	void update(time_t e) {
@@ -45,11 +46,12 @@ private:
 	}
 
 public:
-	bool operator< (Date& o) { return t < o.t;  }
+	bool operator< (Date& o) { return t <  o.t; }
 	bool operator<=(Date& o) { return t <= o.t; }
-	bool operator> (Date& o) { return t > o.t;  }
+	bool operator> (Date& o) { return t >  o.t; }
 	bool operator>=(Date& o) { return t >= o.t; }
 	bool operator==(Date& o) { return t == o.t; }
+	bool operator!=(Date& o) { return t != o.t; }
 
 	const std::string asString() const {
 		return std::to_string(d.tm_year + 1900) + "-" + std::to_string(d.tm_mon + 1) + "-" + std::to_string(d.tm_mday);
@@ -243,6 +245,35 @@ namespace DB {
 
 			// execute query
 			execQuery(connection, t.c_str());
+
+			// close connection
+			sqlite3_close(connection);
+			connection = nullptr;
+		}
+	}
+
+	static void addDeviceLog(int id, Date& date, std::string& logger, std::string log) {
+		sqlite3* connection;
+		std::string tmp = "db/logs/" + std::to_string(id) + ".db";
+		if (createConnection(connection, tmp.c_str(), createLog)) {
+			// create query
+			std::string t = "INSERT INTO `log` (`date`, `logger`, `log`) VALUES (" + date.asString() + ", \"" + logger + "\", \"" + log + "\")";
+
+			// execute query
+			execQuery(connection, t.c_str());
+
+			// close connection
+			sqlite3_close(connection);
+			connection = nullptr;
+		}
+	}
+
+	static const void updateLog(const int id, const char* t) {
+		sqlite3* connection;
+		std::string tmp = "db/logs/" + std::to_string(id) + ".db";
+		if (createConnection(connection, tmp.c_str(), createLog)) {
+			// execute query
+			execQuery(connection, t);
 
 			// close connection
 			sqlite3_close(connection);

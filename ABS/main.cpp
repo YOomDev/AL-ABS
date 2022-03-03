@@ -1,9 +1,13 @@
 #include "ImGui/imgui.h" // ImGui functions
 #include "ImGui/backends/imgui_impl_dx9.h" // ImGui backend
 #include "ImGui/backends/imgui_impl_win32.h" // ImGui backend
+#include "ImGui/misc/cpp/imgui_stdlib.h" // inputText std::string as buffer       // currently gives unresolved externals error
+
 #include <d3d9.h> // Used for graphics device to display Dear ImGui
 #include <tchar.h> // ???
 #include "DB.h" // My database library
+
+
 
 //////////
 // TODO //
@@ -42,6 +46,18 @@ enum class AdminScreen {
     DECOMMISSION
 };
 
+namespace RepeatCheck {
+    static const int NEVER = 0,
+                     DAILY = 1,
+                     WEEKLY = 2,
+                     MONTHLY = 3,
+                     QUARTERLY = 4,
+                     BIYEARLY = 5,
+                     YEARLY = 6,
+                     HALFDECENIUM = 7,
+                     DECENIUM = 8;
+}
+
 // Data
 static LPDIRECT3D9              g_pD3D = NULL;
 static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
@@ -53,9 +69,29 @@ void CleanupDeviceD3D();
 void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static const char* getFrequencyNotation(int f) {
-    return "0"; // TODO
-}
+static const char* frequencyNotation[9] = {
+    "No checks",
+    "Daily check",
+    "Weekly check",
+    "Monhtly check",
+    "Quarterly check",
+    "Bi-Yearly check",
+    "Yearly check",
+    "Every 5 years check",
+    "Check once every decenium"
+};
+
+static const time_t frequencyDateOffset[9]{
+    0,
+    Date(0,  0, 2).t,
+    Date(0,  0, 8).t, 
+    Date(0,  1, 1).t,
+    Date(0,  3, 1).t,
+    Date(0,  6, 1).t,
+    Date(1,  0, 1).t,
+    Date(5,  0, 1).t,
+    Date(10, 0, 1).t
+};
 
 static void addDevice(int id) {
     DeviceData t = { id, "test" + std::to_string(id%5), true, "VERW" + std::to_string(id % 7), std::to_string(id%8 + 40100), "device_type" + std::to_string(id % 7), 123, "companySupplier" + std::to_string(id % 8), "companyManufacturer" + std::to_string(id % 2), 0, 0, std::to_string(id % 15), "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 0.3f * (id % 200) + 20.0f};
@@ -147,6 +183,7 @@ int main(int, char**) {
     // admin screen
     AdminScreen adminScreen = AdminScreen::NONE;
     DeviceMenu adminDevice;
+    DeviceMenu editDevice;
     int adminSearch = 0;
 
     // TMP device add value
@@ -423,19 +460,6 @@ int main(int, char**) {
                             ImGui::EndTable();
                         }
 
-                        ImGui::Text("Useability check");
-                        if (ImGui::BeginTable("Useability", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
-                            ImGui::TableSetupColumn("Info");
-                            ImGui::TableSetupColumn("Value");
-                            ImGui::TableHeadersRow();
-                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
-
-                            ImGui::TableNextColumn(); ImGui::Text("Useability check frequency");
-                            ImGui::TableNextColumn(); ImGui::Text(getFrequencyNotation(deviceMenu.data.useabilityFrequency));
-
-                            ImGui::EndTable();
-                        }
-
                         ImGui::Text("Internal check");
                         if (ImGui::BeginTable("Internal", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
                             ImGui::TableSetupColumn("Info");
@@ -444,7 +468,7 @@ int main(int, char**) {
                             ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                             ImGui::TableNextColumn(); ImGui::Text("Internal check frequency");
-                            ImGui::TableNextColumn(); ImGui::Text(getFrequencyNotation(deviceMenu.data.internalFrequency));
+                            ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[deviceMenu.data.internalFrequency]);
                             if (deviceMenu.data.internalFrequency) {
                                 ImGui::TableNextColumn(); ImGui::Text("Last internal check");
                                 ImGui::TableNextColumn(); ImGui::Text(deviceMenu.data.lastInternalCheck.asString().c_str());
@@ -463,7 +487,7 @@ int main(int, char**) {
                             ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                             ImGui::TableNextColumn(); ImGui::Text("External check frequency");
-                            ImGui::TableNextColumn(); ImGui::Text(getFrequencyNotation(deviceMenu.data.externalFrequency));
+                            ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[deviceMenu.data.externalFrequency]);
                             if (deviceMenu.data.externalFrequency) {
                                 ImGui::TableNextColumn(); ImGui::Text("External company");
                                 ImGui::TableNextColumn(); ImGui::Text(deviceMenu.data.externalCompany.c_str());
@@ -486,7 +510,7 @@ int main(int, char**) {
                             ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                             ImGui::TableNextColumn(); ImGui::Text("Useability check frequency");
-                            ImGui::TableNextColumn(); ImGui::Text(getFrequencyNotation(0)); // TODO
+                            ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[0]); // TODO
 
                             ImGui::EndTable();
                         }
@@ -527,7 +551,6 @@ int main(int, char**) {
 
                             ImGui::EndTable();
                         }
-
                     } else { ImGui::Text("Could not find a device with that ID"); }
 
                     // Make states do the right thing
@@ -536,6 +559,7 @@ int main(int, char**) {
                 }
                 if (ImGui::BeginTabItem("Admin", nullptr, NULL)) {
                     //if (screen != CurrentScreen::ADMIN) {}
+                    if (editDevice.isLoaded && adminScreen != AdminScreen::EDIT) { editDevice.unloadDevice(); }
 
                     ImGui::Text("Screen select");
                     if (ImGui::Button("Edit")) { adminScreen = AdminScreen::EDIT; adminDevice.unloadDevice(); }
@@ -545,12 +569,163 @@ int main(int, char**) {
                     switch (adminScreen) {
                     case AdminScreen::EDIT: {
                         ImGui::Text("Search:");
-                        if (ImGui::Button("Search for device")) { adminDevice.loadDevice(adminSearch, filterMenu); }
+                        if (ImGui::Button("Search for device")) { adminDevice.loadDevice(adminSearch, filterMenu); editDevice.loadDevice(adminSearch, filterMenu); }
                         ImGui::SameLine(); ImGui::InputInt("id", &adminSearch);
                         ImGui::Separator();
                         if (!adminDevice.isLoaded) { ImGui::Text("Device with the given id could not be found."); }
                         else {
-                            // TODO
+                            if (ImGui::BeginTable("Device", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                                ImGui::TableSetupColumn("Edit");
+                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                                ImGui::TableNextColumn(); ImGui::InputText("Instrument", &editDevice.data.name);
+                                ImGui::TableNextColumn(); ImGui::InputText("Model", &editDevice.data.model);
+                                ImGui::TableNextColumn(); ImGui::InputInt("Serial number", &editDevice.data.serialnumber);
+                                ImGui::TableNextColumn(); ImGui::InputText("Supplier", &editDevice.data.supplier);
+
+                                ImGui::TableNextColumn(); ImGui::Text("Date of purchase"); // TODO
+                                ImGui::TableNextColumn(); ImGui::Text(editDevice.data.purchaseDate.asString().c_str());
+                                ImGui::TableNextColumn(); ImGui::Text("End of warranty"); // TODO
+                                ImGui::TableNextColumn(); ImGui::Text(editDevice.data.warrantyDate.asString().c_str());
+
+                                ImGui::TableNextColumn(); ImGui::InputText("Manufacturer", &editDevice.data.manufacturer);
+                                ImGui::TableNextColumn(); ImGui::InputText("Department", &editDevice.data.department);
+                                ImGui::TableNextColumn(); ImGui::InputText("Cost place", &editDevice.data.costplace);
+                                ImGui::TableNextColumn(); ImGui::InputText("Cost place name", &editDevice.data.costplaceName);
+
+                                ImGui::EndTable();
+                            }
+
+                            ImGui::Text("Internal check");
+                            if (ImGui::BeginTable("Internal", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                                ImGui::TableSetupColumn("Edit");
+                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                                ImGui::TableNextColumn(); ImGui::Text("Internal check frequency"); // TODO
+                                ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[editDevice.data.internalFrequency]);
+                                ImGui::SameLine(); if (ImGui::Button("+ internal frequency")) { editDevice.data.internalFrequency++; editDevice.data.internalFrequency %= 9; }
+                                ImGui::SameLine(); if (ImGui::Button("- internal frequency")) { editDevice.data.internalFrequency--; while (editDevice.data.internalFrequency < 0) { editDevice.data.internalFrequency += 9; } }
+                                if (editDevice.data.internalFrequency) {
+                                    ImGui::TableNextColumn(); ImGui::Text("Last internal check"); // TODO
+                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.lastInternalCheck.asString().c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text("Next internal check"); // TODO
+                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.nextInternalCheck.asString().c_str());
+                                }
+
+                                ImGui::EndTable();
+                            }
+
+                            ImGui::Text("External check");
+                            if (ImGui::BeginTable("External", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                                ImGui::TableSetupColumn("Edit");
+                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                                ImGui::TableNextColumn(); ImGui::Text("External check frequency"); // TODO
+                                ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[editDevice.data.externalFrequency]);
+                                ImGui::SameLine(); if (ImGui::Button("+ external frequency")) { editDevice.data.externalFrequency++; editDevice.data.externalFrequency %= 9; }
+                                ImGui::SameLine(); if (ImGui::Button("- external frequency")) { editDevice.data.externalFrequency--; while (editDevice.data.externalFrequency < 0) { editDevice.data.externalFrequency += 9; } }
+
+                                if (editDevice.data.externalFrequency) {
+                                    ImGui::TableNextColumn(); ImGui::InputText("External company", &editDevice.data.externalCompany);
+                                    ImGui::TableNextColumn(); ImGui::Text("Last external check"); // TODO
+                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.lastExternalCheck.asString().c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text("Next external check"); // TODO
+                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.nextExternalCheck.asString().c_str());
+                                    ImGui::TableNextColumn(); ImGui::InputText("Contract description", &editDevice.data.contractDescription);
+                                }
+
+                                ImGui::EndTable();
+                            }
+
+                            ImGui::Text("Administration");
+                            if (ImGui::BeginTable("Administration", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                                ImGui::TableSetupColumn("Edit");
+                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                                ImGui::TableNextColumn(); ImGui::Text("Useability check frequency");
+                                ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[editDevice.data.useabilityFrequency]);
+                                ImGui::SameLine(); if (ImGui::Button("+ useability frequency")) { editDevice.data.useabilityFrequency++; editDevice.data.useabilityFrequency %= 9; }
+                                ImGui::SameLine(); if (ImGui::Button("- useability frequency")) { editDevice.data.useabilityFrequency--; while (editDevice.data.useabilityFrequency < 0) { editDevice.data.useabilityFrequency += 9; } }
+
+                                ImGui::EndTable();
+                            }
+
+                            ImGui::Text("Status");
+                            if (ImGui::BeginTable("Status", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                                ImGui::TableSetupColumn("Edit");
+                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                                ImGui::TableNextColumn(); ImGui::Checkbox("In use", &editDevice.data.inUse);
+                                ImGui::TableNextColumn(); ImGui::Text("Setup date"); // TODO
+                                ImGui::TableNextColumn(); ImGui::Text(editDevice.data.dateOfSetup.asString().c_str());
+                                ImGui::TableNextColumn(); ImGui::Text("Decommissioning date"); // TODO
+                                ImGui::TableNextColumn(); ImGui::Text(editDevice.data.dateOfDecommissioning.asString().c_str());
+                                ImGui::TableNextColumn(); ImGui::InputFloat("Wattage", &editDevice.data.wattage);
+
+                                ImGui::EndTable();
+                            }
+
+                            ImGui::Text("Logs");
+                            if (ImGui::BeginTable("Status", 3, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                                ImGui::TableSetupColumn("Date");
+                                ImGui::TableSetupColumn("Logger");
+                                ImGui::TableSetupColumn("Log");
+                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                                for (int i = 0; i < editDevice.data.logDate.size(); i++) {
+                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.logDate[i].asString().c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.logLogger[i].c_str());
+                                    ImGui::TableNextColumn(); ImGui::TextWrapped(editDevice.data.logLog[i].c_str());
+                                }
+
+                                ImGui::EndTable();
+                            }
+
+                            if (ImGui::Button("Save device")) {
+                                // Reference & costplace
+                                if (adminDevice.data.costplace.compare(editDevice.data.costplace) != 0 || adminDevice.data.inUse != editDevice.data.inUse) {
+                                    // Delete from old costplace file to new costplace file
+                                } else {
+
+                                }
+
+                                // Log
+                                int c;
+                                int t = adminDevice.data.logDate.size();
+                                while ((c = adminDevice.data.logDate.size()) < editDevice.data.logDate.size()) {
+                                    DB::addDeviceLog(editDevice.data.id, editDevice.data.logDate[c], editDevice.data.logLogger[c], editDevice.data.logLog[c]);
+
+                                    // add to adminDevice for next for loop so it doesnt have to push changes or have different array sizes
+                                    adminDevice.data.logDate.push_back(editDevice.data.logDate[c]);
+                                    adminDevice.data.logLogger.push_back(editDevice.data.logLogger[c]);
+                                    adminDevice.data.logLog.push_back(editDevice.data.logLog[c]);
+                                }
+                                for (int q = 0; q < t; q++) {
+                                    bool shouldChange = false;
+                                    std::string tmp = "UPDATE `log` SET ";
+                                    bool hasAdded = false;
+                                    if (adminDevice.data.logDate[q] != editDevice.data.logDate[q]) {
+                                        tmp += "`date` = "+ std::to_string(editDevice.data.logDate[q].asInt64());
+                                        hasAdded = true;
+                                    }
+                                    if (adminDevice.data.logLogger[q].compare(editDevice.data.logLogger[q]) != 0) {
+                                        if (hasAdded) { tmp += ", "; } else { hasAdded = true; }
+                                        tmp += "`logger` = \"" + editDevice.data.logLogger[q]+"\"";
+                                    }
+                                    if (adminDevice.data.logLog[q].compare(editDevice.data.logLog[q]) != 0) {
+                                        if (hasAdded) { tmp += ", "; } else { hasAdded = true; }
+                                        tmp += "`log` = \"" + editDevice.data.logLog[q] + "\"";
+                                    }
+                                    tmp += " WHERE `date` = " + std::to_string(editDevice.data.logDate[q].asInt64()) + ";";
+                                    if (hasAdded) { DB::updateLog(editDevice.data.id, tmp.c_str()); }
+                                }
+                            }
                         }
                         ImGui::Text("Editing screen has not been implemented yet");
                         break;

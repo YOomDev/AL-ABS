@@ -22,6 +22,18 @@
     <Filter Include="Header Files\imgui">
       <UniqueIdentifier>{d7699b3d-b4bd-4571-97bf-d1d1f9ce40a4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\imgui\misc">
+      <UniqueIdentifier>{73bf40b0-7bb4-48e1-b1a2-9be5cc91ba1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\imgui\misc">
+      <UniqueIdentifier>{1d636ed0-ee31-4905-b469-11de99e7f05a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui\misc\cpp">
+      <UniqueIdentifier>{b2de3fb3-9bb6-4eee-88e5-75c2bfe0ba51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\imgui\misc\cpp">
+      <UniqueIdentifier>{2b226894-50bb-480a-a6e8-76eb97bd49a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -47,6 +59,9 @@
     </ClCompile>
     <ClCompile Include="ImGui\backends\imgui_impl_win32.cpp">
       <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files\imgui\misc\cpp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +91,9 @@
     </ClInclude>
     <ClInclude Include="ImGui\backends\imgui_impl_win32.h">
       <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\misc\cpp\imgui_stdlib.h">
+      <Filter>Header Files\imgui\misc\cpp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
