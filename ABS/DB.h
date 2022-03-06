@@ -7,7 +7,7 @@
 #include <ctime> // time_t
 #include "sqlite/sqlite3.h" // Database library
 
-static const char* createRef = "CREATE TABLE IF NOT EXISTS `reference` (`device_id` INT NOT NULL UNIQUE, `device_name` TEXT NOT NULL, `device_in_use` BIT(1) NOT NULL DEFAULT '0', `device_location` TEXT, `device_costplace` TEXT, `device_next_checkup` BIGINT DEFAULT NULL, PRIMARY KEY (`device_id`));";
+static const char* createRef = "CREATE TABLE IF NOT EXISTS `reference` (`device_id` INT NOT NULL UNIQUE, `device_name` TEXT NOT NULL, `device_in_use` INT NOT NULL, `device_location` TEXT, `device_costplace` TEXT, `device_next_checkup` BIGINT DEFAULT NULL, PRIMARY KEY (`device_id`));";
 static const char* createDev = "CREATE TABLE IF NOT EXISTS `device` (`device_id` INT NOT NULL UNIQUE, `model` TEXT, `serial_number` INT, `supplier` TEXT, `manufacturer` TEXT, `purchase_date` BIGINT, `warranty_date` BIGINT, `department` TEXT, `costplace_name` TEXT, `administrator` TEXT, `replacement` TEXT, `has_log` BIT(1), `has_manual` BIT(1), `fitness_freq` INT, `internal_freq` INT, `last_internal_check` BIGINT, `next_internal_check` BIGINT, `external_company` TEXT, `external_freq` INT, `last_external_check` BIGINT, `next_external_check` BIGINT, `contract_desc` TEXT, `setup_date` BIGINT, `decommission_date` BIGINT, `wattage` FLOAT, PRIMARY KEY (`device_id`));";
 static const char* createLog = "CREATE TABLE IF NOT EXISTS `log` (`date` BIGINT NOT NULL UNIQUE, `logger` TEXT NOT NULL, `log` TEXT NOT NULL, PRIMARY KEY (`date`));";
 static const std::string unused = "outOfUse";
@@ -26,7 +26,7 @@ public:
 	Date(int year, int month, int day) {
 		d->tm_year = year - 1900;
 		d->tm_mon = month - 1;
-		d->tm_mday = day+1;
+		d->tm_mday = day;
 		d->tm_hour = 1;
 		d->tm_min = 1;
 		d->tm_sec = 1;
@@ -55,12 +55,38 @@ public:
 
 	const std::string asString() const { return std::to_string(d->tm_year + 1900) + "-" + std::to_string(d->tm_mon + 1) + "-" + std::to_string(d->tm_mday); }
 	const uint64_t asInt64() { return t; }
+	const void fromStr(std::string& str) {
+		std::string tmp = str;
+		filterDateInput(tmp);
+		// check if valid date string
+		int lines = 0;
+		bool numbersBeforeLine = false;
+		for (int i = 0; i < tmp.size(); i++) { if (tmp[i] == '-') { if (!numbersBeforeLine) { return; } lines++; numbersBeforeLine = false; } else { numbersBeforeLine = true; } }
+		if (lines != 2 || !numbersBeforeLine) { return; }
 
-	static const Date getOffset(int y, int m, int d) { return Date(1970 + y, 1 + m, 1 + d).t - Date(1970, 1, 1).t; }
+		// read date from string
+		int next = tmp.find('-');
+		int y = std::stoi(tmp.substr(0, next));
+		tmp.erase(0, next + 1);
+		next = tmp.find('-');
+		int m = std::stoi(tmp.substr(0, next));
+		tmp.erase(0, next + 1);
+		int d = std::stoi(tmp);
+
+		// update string if date is valid
+		Date td = Date(y, m, d);
+		if (td.t >= 0) { update(td.t); }
+		str = asString();
+	}
+
+	static const Date getOffset(int y, int m, int d) { return Date(1970 + y, 1 + m, d).t - Date(1970, 1, 1).t; }
 	static void filterDateInput(std::string str) {
 		std::string tmp;
+		int line = 0;
 		for (int i = 0; i < str.size(); i++) {
 			switch (str[i]) {
+				case '-':
+					line++;
 				case '0':
 				case '1':
 				case '2':
@@ -71,8 +97,9 @@ public:
 				case '7':
 				case '8':
 				case '9':
-				case '-':
-					tmp += str[i]; 
+					if (line < 3) {
+						tmp += str[i];
+					}
 					break;
 				default: break;
 			}
@@ -173,7 +200,7 @@ namespace DB {
 		return execQuery(con, create);
 	}
 
-	static void addDevice(const DeviceData& data) {
+	static void addDevice(const DeviceData& data, bool old) {
 		sqlite3* connection;
 
 		// Setup data in reference
@@ -273,19 +300,21 @@ namespace DB {
 			connection = nullptr;
 		}
 
-		// Setup a log database entry file
-		tmp = "db/logs/" + std::to_string(data.id) + ".db";
-		if (createConnection(connection, tmp.c_str(), createLog)) {
-			// create query
-			Date today;
-			std::string t = "INSERT INTO `log` (`date`, `logger`, `log`) VALUES (" + today.asString() + ", \"ABS\", \"Created device entry\")";
+		if (!old) {
+			// Setup a log database entry file
+			tmp = "db/logs/" + std::to_string(data.id) + ".db";
+			if (createConnection(connection, tmp.c_str(), createLog)) {
+				// create query
+				Date today;
+				std::string t = "INSERT INTO `log` (`date`, `logger`, `log`) VALUES (" + today.asString() + ", \"ABS\", \"Created device entry\")";
 
-			// execute query
-			execQuery(connection, t.c_str());
+				// execute query
+				execQuery(connection, t.c_str());
 
-			// close connection
-			sqlite3_close(connection);
-			connection = nullptr;
+				// close connection
+				sqlite3_close(connection);
+				connection = nullptr;
+			}
 		}
 	}
 
@@ -348,9 +377,7 @@ public:
 			while (sqlite3_step(stmt) != SQLITE_DONE) {
 				id.push_back(sqlite3_column_int(stmt, 0));
 				name.push_back(std::string((const char*)sqlite3_column_text(stmt, 1)));
-				int i = sqlite3_column_bytes(stmt, 2);
-				printf_s("ID%i: %i\n", id.at(id.size()-1), i);
-				inUse.push_back(i);
+				inUse.push_back(sqlite3_column_int(stmt, 2) == 1);
 				location.push_back(std::string((const char*)sqlite3_column_text(stmt, 3)));
 				costplace.push_back(std::string((const char*)sqlite3_column_text(stmt, 4)));
 				nextCheckup.push_back(Date(sqlite3_column_int64(stmt, 5)));
@@ -556,85 +583,20 @@ private:
 namespace DB {
 	static void moveDevice(DeviceMenu& old, DeviceMenu& edited) {
 		sqlite3* connection;
-		std::string tmp = "db/costplaces/" + (old.data.inUse ? old.data.costplace : unused) + ".db";
+		std::string tmp;
+		// delete from reference file
+		if (createConnection(connection, "db/reference.db", createRef)) {
+			tmp = "DELETE FROM `reference` WHERE device_id=" + std::to_string(old.data.id);
+			DB::execQuery(connection, tmp.c_str());
+		}
+
+		// delete from costplace file
+		tmp = "db/costplaces/" + (old.data.inUse ? old.data.costplace : unused) + ".db";
 		if (createConnection(connection, tmp.c_str(), createDev)) {
 			tmp = "DELETE FROM `device` WHERE device_id=" + std::to_string(old.data.id);
 			DB::execQuery(connection, tmp.c_str());
 		}
 
-		DeviceData& data = edited.data;
-		// Setup device info in its used costplace database
-		tmp = "db/costplaces/" + (data.inUse ? data.costplace : unused) + ".db";
-		if (createConnection(connection, tmp.c_str(), createDev)) {
-			// create query
-			std::string t = "INSERT INTO `device` (device_id, model, serial_number, supplier, manufacturer, purchase_date, warranty_date, department, costplace_name, administrator, replacement, has_log, has_manual, fitness_freq, internal_freq, last_internal_check, next_internal_check, external_company, external_freq, last_external_check, next_external_check, contract_desc, setup_date, decommission_date, wattage) VALUES (";
-			t += std::to_string(data.id);
-
-			// device info
-			t += ", \"";
-			t += data.model;
-			t += "\", ";
-			t += std::to_string(data.serialnumber);
-			t += ", \"";
-			t += data.supplier;
-			t += "\", \"";
-			t += data.manufacturer;
-			t += "\", ";
-			t += data.purchaseDate.asString();
-			t += ", ";
-			t += data.warrantyDate.asString();
-			t += ", \"";
-			t += data.department;
-			t += "\", \"";
-			t += data.costplaceName;
-
-			// internal info
-			t += "\", \"";
-			t += data.admin;
-			t += "\", \"";
-			t += data.replacement;
-			t += "\", ";
-			t += data.hasLog ? "1" : "0";
-			t += ", ";
-			t += data.hasManual ? "1" : "0";
-
-			// internal check
-			t += ", ";
-			t += std::to_string(data.useabilityFrequency);
-			t += ", ";
-			t += std::to_string(data.internalFrequency);
-			t += ", ";
-			t += data.lastInternalCheck.asString(); // date
-			t += ", ";
-			t += data.nextInternalCheck.asString(); // date
-
-			// external check
-			t += ", \"";
-			t += data.externalCompany;
-			t += "\", ";
-			t += std::to_string(data.externalFrequency);
-			t += ", ";
-			t += data.lastExternalCheck.asString(); // date
-			t += ", ";
-			t += data.nextExternalCheck.asString(); // date
-			t += ", \"";
-			t += data.contractDescription;
-
-			// status
-			t += "\", ";
-			t += data.dateOfSetup.asString(); // date/string?
-			t += ", ";
-			t += data.dateOfDecommissioning.asString(); // date/string?
-			t += ", ";
-			t += std::to_string(data.wattage);
-			t += ");";
-
-			// execute query
-			execQuery(connection, t.c_str());
-
-			// close connection
-			sqlite3_close(connection);
-			connection = nullptr;
-		}
+		DB::addDevice(edited.data, true);
 	}
 }

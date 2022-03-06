@@ -83,24 +83,24 @@ static const char* frequencyNotation[9] = {
 
 static const time_t frequencyDateOffset[9]{
     Date::getOffset( 0, 0, 0).t,
-    Date::getOffset( 0, 0, 1).t,
-    Date::getOffset( 0, 0, 7).t,
-    Date::getOffset( 0, 1, 0).t,
-    Date::getOffset( 0, 3, 0).t,
-    Date::getOffset( 0, 6, 0).t,
-    Date::getOffset( 1, 0, 0).t,
-    Date::getOffset( 5, 0, 0).t,
-    Date::getOffset(10, 0, 0).t
+    Date::getOffset( 0, 0, 1 + 1).t,
+    Date::getOffset( 0, 0, 7 + 1).t,
+    Date::getOffset( 0, 1, 0 + 1).t,
+    Date::getOffset( 0, 3, 0 + 1).t,
+    Date::getOffset( 0, 6, 0 + 1).t,
+    Date::getOffset( 1, 0, 0 + 1).t,
+    Date::getOffset( 5, 0, 0 + 1).t,
+    Date::getOffset(10, 0, 0 + 1).t
 };
 
 static void addDevice(int id) {
     DeviceData t = { id, "test" + std::to_string(id % 5), id % 2 ? true : false, "VERW" + std::to_string(id % 7), std::to_string(id % 8 + 40100), "device_type" + std::to_string(id % 7), 123, "companySupplier" + std::to_string(id % 8), "companyManufacturer" + std::to_string(id % 2), 0, 0, std::to_string(id % 15), "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 0.3f * (id % 200) + 20.0f};
-    DB::addDevice(t);
+    DB::addDevice(t, false);
 };
 
 static inline void dateInput(Date& date, std::string& str, const char* label) {
     Date::filterDateInput(str);
-    if (str.size() == 0) { str = date.asString(); }
+    if (str.size() == 0) { str = date.asString(); } else { date.fromStr(str); }
     ImGui::InputText(label, &str);
 };
 
@@ -688,26 +688,22 @@ int main(int, char**) {
                             }
 
                             if (ImGui::Button("Save device")) {
+
                                 // Reference & costplace
-                                if (adminDevice.data.costplace.compare(editDevice.data.costplace) != 0 || adminDevice.data.inUse != editDevice.data.inUse) {
-                                    DB::moveDevice(adminDevice, editDevice);
-                                } else {
-                                    // TODO: update the old data entry
-                                }
+                                DB::moveDevice(adminDevice, editDevice); // removes from old location and adds to new location (even if same location for ease of programming)
 
                                 // Log
                                 int c;
                                 int t = adminDevice.data.logDate.size();
                                 while ((c = adminDevice.data.logDate.size()) < editDevice.data.logDate.size()) {
-                                    DB::addDeviceLog(editDevice.data.id, editDevice.data.logDate[c], editDevice.data.logLogger[c], editDevice.data.logLog[c]);
+                                    DB::addDeviceLog(editDevice.data.id, editDevice.data.logDate[c], editDevice.data.logLogger[c], editDevice.data.logLog[c]); // add the new logs
 
                                     // add to adminDevice for next for loop so it doesnt have to push changes or have different array sizes
                                     adminDevice.data.logDate.push_back(editDevice.data.logDate[c]);
                                     adminDevice.data.logLogger.push_back(editDevice.data.logLogger[c]);
                                     adminDevice.data.logLog.push_back(editDevice.data.logLog[c]);
                                 }
-                                for (int q = 0; q < t; q++) {
-                                    bool shouldChange = false;
+                                for (int q = 0; q < t; q++) { // update the old logs if needed
                                     std::string tmp = "UPDATE `log` SET ";
                                     bool hasAdded = false;
                                     if (adminDevice.data.logDate[q] != editDevice.data.logDate[q]) {
@@ -725,6 +721,7 @@ int main(int, char**) {
                                     tmp += " WHERE `date` = " + std::to_string(editDevice.data.logDate[q].asInt64()) + ";";
                                     if (hasAdded) { DB::updateLog(editDevice.data.id, tmp.c_str()); }
                                 }
+
                             }
                         }
                         ImGui::Text("Editing screen has not been implemented yet");
