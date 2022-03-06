@@ -7,16 +7,16 @@
 #include <tchar.h> // ???
 #include "DB.h" // My database library
 
-
-
 //////////
 // TODO //
 //////////
 
 /*
 * 
+* BUGS:
+* editing a device moves it to ID=2016 which breaks loading the full data
+* 
 * TODO:
-* Add DATE support for the database interactions: only need to change database types to BIGINT instead of INT
 * Implement admin adding a device the normal way
 * Implement admin removing a device
 * 
