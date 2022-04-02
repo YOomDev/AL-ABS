@@ -612,7 +612,7 @@ int main(int, char**) {
                     //if (screen != CurrentScreen::ADMIN) {}
                     if (editDevice.isLoaded && adminScreen != AdminScreen::EDIT) { editDevice.unloadDevice(); }
 
-                    ImGui::Text("Screen select");
+                    // ImGui::Text("Screen select");
                     if (ImGui::Button("Edit")) { adminScreen = AdminScreen::EDIT; adminDevice.unloadDevice(); }
                     ImGui::SameLine(); if (ImGui::Button("Add")) { adminScreen = AdminScreen::ADD; adminDevice.unloadDevice(); }
                     ImGui::SameLine(); if (ImGui::Button("Decommission")) { adminScreen = AdminScreen::DECOMMISSION; adminDevice.unloadDevice(); }
@@ -801,12 +801,12 @@ int main(int, char**) {
                 }
                 if (ImGui::BeginTabItem("Language", nullptr, NULL)) {
                     if (ImGui::Button("Reload language files")) { language.loadLanguage(language.getCurrentLanguage()); language.findLanguages(); }
-                    if (ImGui::BeginListBox("Languages")) {
-                        for (int i = 0; i < language.languages.size(); i++) {
-                            if (ImGui::Selectable(language.languages[i].c_str(), isEqual(language.getCurrentLanguage(), language.languages[i]))) { language.loadLanguage(language.languages[i]); }
-                            if (isEqual(language.getCurrentLanguage(), language.languages[i])) { ImGui::SetItemDefaultFocus(); }
-                        }
-                        ImGui::EndListBox();
+                    ImGui::Separator();
+                    ImGui::Text("Current language:"); ImGui::SameLine(); ImGui::Text(language.getCurrentLanguage().c_str());
+                    ImGui::Separator();
+                    ImGui::Text("Click on the language you want to load:");
+                    for (int i = 0; i < language.languages.size(); i++) {
+                        if (ImGui::Button(language.languages[i].c_str())) { language.loadLanguage(language.languages[i]); }
                     }
                     ImGui::EndTabItem();
                 }
