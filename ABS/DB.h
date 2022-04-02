@@ -581,10 +581,6 @@ private:
 
 namespace DB {
 	static void moveDevice(DeviceMenu& old, DeviceMenu& edited) {
-		
-		// debugging id bug (id set to 2016 even though it should be something like 5, 
-		printf_s("move-id %i\n", edited.data.id); // device id = 2016 here, check where it gets changed 
-
 		sqlite3* connection;
 		std::string tmp;
 		// delete from reference file

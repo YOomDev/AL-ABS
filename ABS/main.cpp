@@ -691,9 +691,7 @@ int main(int, char**) {
                             }
 
                             if (ImGui::Button("Save device")) {
-
                                 // Reference & costplace
-                                printf_s("%i-", adminDevice.data.id);
                                 DB::moveDevice(adminDevice, editDevice); // removes from old location and adds to new location (even if same location for ease of programming)
 
                                 // Log
