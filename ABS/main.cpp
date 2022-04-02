@@ -6,6 +6,7 @@
 #include <d3d9.h> // Used for graphics device to display Dear ImGui
 #include <tchar.h> // _T() ???
 #include "DB.h" // My database library
+#include "Language.h"
 
 //////////
 // TODO //
@@ -163,6 +164,7 @@ int main(int, char**) {
 
     FilterMenu filterMenu;
     DeviceMenu deviceMenu;
+    Language language;
     
     // Window bools
     bool done = false;
@@ -182,19 +184,53 @@ int main(int, char**) {
     bool reloadFilter = true;
     bool shouldAdd = false;
     bool displayedDevices = false;
-    bool isEnabled; // filter display
-    bool canDisplay; // filter display
+    bool isEnabled; // for filter display
+    bool canDisplay; // for filter display
 
-    // device screen
+    // Device screen
     int searchId = 0;
 
-    // admin screen
+    // Admin screen
     int adminSearch = 0;
     AdminScreen adminScreen = AdminScreen::NONE;
     DeviceMenu adminDevice;
     DeviceMenu editDevice;
     EditDeviceDates adminEditDevice;
     EditDeviceDates adminAddDevice;
+
+    // Styling the program
+    const float DARK_FACTOR = 0.7f;
+    // colors
+    const ImVec4 GREEN = ImVec4(0.0f, 0.5f, 0.3f, 1.0f);
+    const ImVec4 DARK_GREEN = ImVec4(0.0f, 0.5f * DARK_FACTOR, 0.3f * DARK_FACTOR, 1.0f);
+    const ImVec4 LIGHT_GREEN = ImVec4(0.0f, 0.5f / DARK_FACTOR, 0.3f / DARK_FACTOR, 1.0f);
+    const ImVec4 WHITE = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    const ImVec4 GRAY = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+
+    // style ptr
+    ImGuiStyle* style = &ImGui::GetStyle();
+    // text
+    style->Colors[ImGuiCol_Text] = WHITE;
+    style->Colors[ImGuiCol_TextDisabled] = GRAY;
+    style->Colors[ImGuiCol_TextSelectedBg] = GREEN;
+    // tabs
+    style->Colors[ImGuiCol_Tab] = DARK_GREEN;
+    style->Colors[ImGuiCol_TabActive] = GREEN;
+    style->Colors[ImGuiCol_TabHovered] = LIGHT_GREEN;
+    // buttons
+    style->Colors[ImGuiCol_Button] = DARK_GREEN;
+    style->Colors[ImGuiCol_ButtonActive] = GREEN;
+    style->Colors[ImGuiCol_ButtonHovered] = LIGHT_GREEN;
+    // checkbox
+    style->Colors[ImGuiCol_CheckMark] = LIGHT_GREEN;
+    // table
+    style->Colors[ImGuiCol_Header] = DARK_GREEN;
+    style->Colors[ImGuiCol_HeaderHovered] = LIGHT_GREEN;
+    style->Colors[ImGuiCol_HeaderActive] = GREEN;
+    // scrollbar
+    style->Colors[ImGuiCol_ScrollbarGrab] = DARK_GREEN;
+    style->Colors[ImGuiCol_ScrollbarGrabHovered] = LIGHT_GREEN;
+    style->Colors[ImGuiCol_ScrollbarGrabActive] = GREEN;
 
     // TMP device add value
     int current = 0; // used in admin testing section as device id
@@ -740,7 +776,7 @@ int main(int, char**) {
                         ImGui::Separator();
                         if (!adminDevice.isLoaded) { ImGui::Text("Device with the given id could not be found."); }
                         else {
-                            // TODO
+                            ImGui::Text("Too bad the message below is still true...");
                         }
                         ImGui::Text("Decommissioning screen has not been implemented yet");
                         break;
@@ -751,23 +787,23 @@ int main(int, char**) {
                     ImGui::Separator();
                     ImGui::Text("Testing buttons");
                     if (ImGui::Button("Add device")) { addDevice(current); current++; }
+                    if (ImGui::Button("Add 100 devices")) { for (int i = 0; i < 100; i++) { addDevice(current); current++; } }
                     if (ImGui::Button("Add 1000 devices")) { for (int i = 0; i < 1000; i++) { addDevice(current); current++; } }
 
                     // Make states do the right thing
                     screen = CurrentScreen::ADMIN;
                     ImGui::EndTabItem();
                 }
-                /*
-                if (ImGui::BeginTabItem("Service", nullptr, NULL)) {
-                    //if (screen != CurrentScreen::SERVICE) {}
-
-                    ImGui::Text("Service panel not implemented yet");
-
-                    // Make states do the right thing
-                    screen = CurrentScreen::SERVICE;
+                if (ImGui::BeginTabItem("Language", nullptr, NULL)) {
+                    if (ImGui::BeginListBox("Languages")) {
+                        for (int i = 0; i < language.languages.size(); i++) {
+                            if (ImGui::Selectable(language.languages[i].c_str(), isEqual(language.getCurrentLanguage(), language.languages[i]))) { language.loadLanguage(language.languages[i]); }
+                            if (isEqual(language.getCurrentLanguage(), language.languages[i])) { ImGui::SetItemDefaultFocus(); }
+                        }
+                        ImGui::EndListBox();
+                    }
                     ImGui::EndTabItem();
                 }
-                */
                 ImGui::EndTabBar();
             }
             ImGui::End();

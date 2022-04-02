@@ -95,5 +95,8 @@
     <ClInclude Include="ImGui\misc\cpp\imgui_stdlib.h">
       <Filter>Header Files\imgui\misc\cpp</Filter>
     </ClInclude>
+    <ClInclude Include="Language.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
