@@ -227,10 +227,15 @@ int main(int, char**) {
     style->Colors[ImGuiCol_Header] = DARK_GREEN;
     style->Colors[ImGuiCol_HeaderHovered] = LIGHT_GREEN;
     style->Colors[ImGuiCol_HeaderActive] = GREEN;
+    style->Colors[ImGuiCol_TableHeaderBg] = DARK_GREEN;
     // scrollbar
     style->Colors[ImGuiCol_ScrollbarGrab] = DARK_GREEN;
     style->Colors[ImGuiCol_ScrollbarGrabHovered] = LIGHT_GREEN;
     style->Colors[ImGuiCol_ScrollbarGrabActive] = GREEN;
+    // background of checkbox & inputs
+    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.0f, 0.5f * DARK_FACTOR * DARK_FACTOR, 0.3f * DARK_FACTOR * DARK_FACTOR, 1.0f);
+    style->Colors[ImGuiCol_FrameBgHovered] = GREEN;
+    style->Colors[ImGuiCol_FrameBgActive] = DARK_GREEN;
 
     // TMP device add value
     int current = 0; // used in admin testing section as device id
@@ -795,6 +800,7 @@ int main(int, char**) {
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Language", nullptr, NULL)) {
+                    if (ImGui::Button("Reload language files")) { language.loadLanguage(language.getCurrentLanguage()); language.findLanguages(); }
                     if (ImGui::BeginListBox("Languages")) {
                         for (int i = 0; i < language.languages.size(); i++) {
                             if (ImGui::Selectable(language.languages[i].c_str(), isEqual(language.getCurrentLanguage(), language.languages[i]))) { language.loadLanguage(language.languages[i]); }
