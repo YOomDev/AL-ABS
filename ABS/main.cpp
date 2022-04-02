@@ -1,10 +1,10 @@
 #include "ImGui/imgui.h" // ImGui functions
 #include "ImGui/backends/imgui_impl_dx9.h" // ImGui backend
 #include "ImGui/backends/imgui_impl_win32.h" // ImGui backend
-#include "ImGui/misc/cpp/imgui_stdlib.h" // inputText std::string as buffer       // currently gives unresolved externals error
+#include "ImGui/misc/cpp/imgui_stdlib.h" // inputText std::string as buffer
 
 #include <d3d9.h> // Used for graphics device to display Dear ImGui
-#include <tchar.h> // ???
+#include <tchar.h> // _T() ???
 #include "DB.h" // My database library
 
 //////////
@@ -25,6 +25,8 @@
 //////////////
 // TODO END //
 //////////////
+
+static const ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders;
 
 enum class YesNoAny {
     YES,
@@ -281,7 +283,7 @@ int main(int, char**) {
                     // Filters //
                     /////////////
 
-                    if (ImGui::BeginTable("DevicesFilter", 4, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                    if (ImGui::BeginTable("DevicesFilter", 4, tableFlags)) {
                         //ImGui::TableSetupColumn("Device ID");
                         //ImGui::TableSetupColumn("Device name");
                         ImGui::TableSetupColumn("Is in use");
@@ -340,7 +342,7 @@ int main(int, char**) {
 
                     // Filtered list from reference database
                     ImGui::Text("Devices found:");
-                    if (ImGui::BeginTable("DevicesFound", 6, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                    if (ImGui::BeginTable("DevicesFound", 6, tableFlags)) {
                         ImGui::TableSetupColumn("Device ID");
                         ImGui::TableSetupColumn("Device name");
                         ImGui::TableSetupColumn("Is in use");
@@ -438,7 +440,7 @@ int main(int, char**) {
                     
                     ImGui::Text("Device");
                     if (deviceMenu.isLoaded) {
-                        if (ImGui::BeginTable("Device", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                        if (ImGui::BeginTable("Device", 2, tableFlags)) {
                             ImGui::TableSetupColumn("Info");
                             ImGui::TableSetupColumn("Value");
                             ImGui::TableHeadersRow();
@@ -469,7 +471,7 @@ int main(int, char**) {
                         }
 
                         ImGui::Text("Internal check");
-                        if (ImGui::BeginTable("Internal", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                        if (ImGui::BeginTable("Internal", 2, tableFlags)) {
                             ImGui::TableSetupColumn("Info");
                             ImGui::TableSetupColumn("Value");
                             ImGui::TableHeadersRow();
@@ -488,7 +490,7 @@ int main(int, char**) {
                         }
 
                         ImGui::Text("External check");
-                        if (ImGui::BeginTable("External", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                        if (ImGui::BeginTable("External", 2, tableFlags)) {
                             ImGui::TableSetupColumn("Info");
                             ImGui::TableSetupColumn("Value");
                             ImGui::TableHeadersRow();
@@ -511,7 +513,7 @@ int main(int, char**) {
                         }
 
                         ImGui::Text("Administration");
-                        if (ImGui::BeginTable("Administration", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                        if (ImGui::BeginTable("Administration", 2, tableFlags)) {
                             ImGui::TableSetupColumn("Info");
                             ImGui::TableSetupColumn("Value");
                             ImGui::TableHeadersRow();
@@ -524,7 +526,7 @@ int main(int, char**) {
                         }
 
                         ImGui::Text("Status");
-                        if (ImGui::BeginTable("Status", 2, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                        if (ImGui::BeginTable("Status", 2, tableFlags)) {
                             ImGui::TableSetupColumn("Info");
                             ImGui::TableSetupColumn("Value");
                             ImGui::TableHeadersRow();
@@ -544,7 +546,7 @@ int main(int, char**) {
                         }
 
                         ImGui::Text("Logs");
-                        if (ImGui::BeginTable("Status", 3, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                        if (ImGui::BeginTable("Status", 3, tableFlags)) {
                             ImGui::TableSetupColumn("Date");
                             ImGui::TableSetupColumn("Logger");
                             ImGui::TableSetupColumn("Log");
@@ -582,7 +584,8 @@ int main(int, char**) {
                         ImGui::Separator();
                         if (!adminDevice.isLoaded) { ImGui::Text("Device with the given id could not be found."); }
                         else {
-                            if (ImGui::BeginTable("Device", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            ImGui::Text((std::string("device id: ") + std::to_string(adminDevice.data.id)).c_str());
+                            if (ImGui::BeginTable("Device", 1, tableFlags)) {
                                 ImGui::TableSetupColumn("Edit");
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
@@ -604,7 +607,7 @@ int main(int, char**) {
                             }
 
                             ImGui::Text("Internal check");
-                            if (ImGui::BeginTable("Internal", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            if (ImGui::BeginTable("Internal", 1, tableFlags)) {
                                 ImGui::TableSetupColumn("Edit");
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
@@ -622,7 +625,7 @@ int main(int, char**) {
                             }
 
                             ImGui::Text("External check");
-                            if (ImGui::BeginTable("External", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            if (ImGui::BeginTable("External", 1, tableFlags)) {
                                 ImGui::TableSetupColumn("Edit");
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
@@ -643,7 +646,7 @@ int main(int, char**) {
                             }
 
                             ImGui::Text("Administration");
-                            if (ImGui::BeginTable("Administration", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            if (ImGui::BeginTable("Administration", 1, tableFlags)) {
                                 ImGui::TableSetupColumn("Edit");
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
@@ -657,7 +660,7 @@ int main(int, char**) {
                             }
 
                             ImGui::Text("Status");
-                            if (ImGui::BeginTable("Status", 1, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            if (ImGui::BeginTable("Status", 1, tableFlags)) {
                                 ImGui::TableSetupColumn("Edit");
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
@@ -671,7 +674,7 @@ int main(int, char**) {
                             }
 
                             ImGui::Text("Logs");
-                            if (ImGui::BeginTable("Status", 3, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders)) {
+                            if (ImGui::BeginTable("Status", 3, tableFlags)) {
                                 ImGui::TableSetupColumn("Date");
                                 ImGui::TableSetupColumn("Logger");
                                 ImGui::TableSetupColumn("Log");
@@ -690,6 +693,7 @@ int main(int, char**) {
                             if (ImGui::Button("Save device")) {
 
                                 // Reference & costplace
+                                printf_s("%i-", adminDevice.data.id);
                                 DB::moveDevice(adminDevice, editDevice); // removes from old location and adds to new location (even if same location for ease of programming)
 
                                 // Log

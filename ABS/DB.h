@@ -420,6 +420,7 @@ public:
 		// Get info from filtermenu
 		for (int i = 0; i < filter.id.size(); i++) {
 			if (filter.id[i] == id) {
+				data.id = id;
 				data.name = filter.name[i];
 				data.inUse = filter.inUse[i];
 				data.location = filter.location[i];
@@ -437,7 +438,6 @@ public:
 			sqlite3_prepare_v2(connection, tmp.c_str() , -1, &stmt, NULL);
 			int sc; // Get sql code
 			while ((sc = sqlite3_step(stmt)) != SQLITE_DONE) {
-				
 				// Other device data is gained from reference list
 				if (sc == SQLITE_MISUSE) {
 					printf_s("Something went wrong while trying to load the device data for device_id=%i, error code for SQLITE_MISUSE (21) has been returned to the program...\n", id);
@@ -501,7 +501,6 @@ public:
 			sqlite3_prepare_v2(connection, tmp.c_str(), -1, &stmt, NULL);
 			int sc; // Get sql code
 			while ((sc = sqlite3_step(stmt)) != SQLITE_DONE) {
-				data.id = sqlite3_column_int(stmt, 0);
 				// Other device data is gained from reference list
 				if (sc == SQLITE_MISUSE) {
 					printf_s("Something went wrong while trying to load the device data for device_id=%i, error code for SQLITE_MISUSE (21) has been returned to the program...\n", id);
@@ -582,6 +581,10 @@ private:
 
 namespace DB {
 	static void moveDevice(DeviceMenu& old, DeviceMenu& edited) {
+		
+		// debugging id bug (id set to 2016 even though it should be something like 5, 
+		printf_s("move-id %i\n", edited.data.id); // device id = 2016 here, check where it gets changed 
+
 		sqlite3* connection;
 		std::string tmp;
 		// delete from reference file
