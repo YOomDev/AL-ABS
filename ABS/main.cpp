@@ -168,7 +168,7 @@ int main(int, char**) {
     
     // Window bools
     bool done = false;
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+    const ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
     CurrentScreen screen = CurrentScreen::FILTER;
     int windowWidth = 1280, windowHeight = 800;
 
@@ -233,7 +233,7 @@ int main(int, char**) {
     style->Colors[ImGuiCol_ScrollbarGrabHovered] = LIGHT_GREEN;
     style->Colors[ImGuiCol_ScrollbarGrabActive] = GREEN;
     // background of checkbox & inputs
-    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.0f, 0.5f * DARK_FACTOR * DARK_FACTOR, 0.3f * DARK_FACTOR * DARK_FACTOR, 1.0f);
+    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.0f, 0.5f * DARK_FACTOR * DARK_FACTOR, 0.3f * DARK_FACTOR * DARK_FACTOR, 1.0f); // DARK_DARK_GREEN
     style->Colors[ImGuiCol_FrameBgHovered] = GREEN;
     style->Colors[ImGuiCol_FrameBgActive] = DARK_GREEN;
 
