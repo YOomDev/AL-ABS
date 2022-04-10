@@ -200,7 +200,7 @@ namespace DB {
 		return execQuery(con, create);
 	}
 
-	static void addDevice(const DeviceData& data, bool old) {
+	static bool addDevice(const DeviceData& data, bool old) {
 		sqlite3* connection;
 
 		// Setup data in reference
@@ -219,7 +219,7 @@ namespace DB {
 			t += "\");";
 
 			// Execute query
-			execQuery(connection, t.c_str());
+			if (!execQuery(connection, t.c_str())) { return false; }
 
 			// Close connection
 			sqlite3_close(connection);
@@ -316,6 +316,7 @@ namespace DB {
 				connection = nullptr;
 			}
 		}
+		return true;
 	}
 
 	static void addDeviceLog(int id, Date& date, std::string& logger, std::string log) {

@@ -608,7 +608,7 @@ int main(int, char**) {
                             ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                             ImGui::TableNextColumn(); ImGui::Text("Useability check frequency");
-                            ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[0]); // TODO
+                            ImGui::TableNextColumn(); ImGui::Text(frequencyNotation[deviceMenu.data.useabilityFrequency]);
 
                             ImGui::EndTable();
                         }
