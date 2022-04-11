@@ -1,0 +1,77 @@
+%FILTER% Filter
+%DEVICE% Device
+%YES% Yes
+%NO% No
+%ALL% All
+%FILTER_IN_USE% Is in use
+%FILTER_LOCATION% Location
+%FILTER_COSTPLACE% Costplace
+%FILTER_CHECKUP% Checkups
+%FILTER_DEVICES% Devices
+%FILTER_ID% ID
+%FILTER_NAME% Name
+%FILTER_NO_CHECKUPS% No checkup
+%RELOAD_MESSAGE% Something might have changed while you were in a different menu, so we would like to recommend you to reload...
+%PRESS_RELOAD% Press to reload
+%SEARCH_HEADER% Search:
+%SEARCH_DEVICE% Search for device
+%ID% ID
+%DEVICE_ID_HEADER% Device ID:
+%DEVICE_INFO% Info
+%DEVICE_VALUE% Value
+%DEVICE_INSTRUMENT% Instrument
+%DEVICE_MODEL% Model
+%DEVICE_SERIAL_NUMBER% Serial number
+%DEVICE_SUPPLIER% Supplier
+%DEVICE_DATE_PURCHASE% Date of purchase
+%DEVICE_DATE_WARRANTY% End of warranty date
+%DEVICE_MANUFACTURER% Manufacturer
+%DEVICE_DEPARTMENT% Department
+%DEVICE_COSTPLACE% Costplace ID
+%DEVICE_COSTPLACE_NAME% Costplace name
+%DEVICE_INTERNAL_CHECK% Internal check
+%DEVICE_INTERNAL_CHECK_FREQUENCY% Internal check frequency
+%DEVICE_INTERNAL_CHECK_LAST% Last internal check
+%DEVICE_INTERNAL_CHECK_NEXT% Next internal check
+%FILTER_SELECT_ALL% Select all
+%DEVICE_NOT_FOUND% Device with that ID could not be found
+%DEVICE_EXTERNAL_CHECK% External check
+%DEVICE_EXTERNAL_CHECK_FREQUENCY% External check frequency
+%DEVICE_EXTERNAL_CHECK_COMPANY% External company
+%DEVICE_EXTERNAL_CHECK_LAST% Last external check
+%DEVICE_EXTERNAL_CHECK_NEXT% Next external check
+%DEVICE_EXTERNAL_CHECK_CONTRACT% External company contract
+%DEVICE_ADMINISTRATION% Administration
+%DEVICE_USEABILITY_CHECK_FREQUENCY% Useability check frequency
+%FREQ_DAILY% Daily check
+%FREQ_NO_CHECKS% No check
+%FREQ_WEEKLY% Weekly check
+%FREQ_MONTHLY% Monthly check
+%FREQ_QUARTERLY% Quarterly check
+%FREQ_BI_YEARLY% Bi-yearly check
+%FREQ_YEARLY% Yearly check
+%FREQ_HALF_DECENIUM% Check every 5 years
+%FREQ_DECENIUM% Check every decenium
+%DEVICE_STATUS% Status
+%DEVICE_IN_USE% Is in use
+%DEVICE_DATE_SETUP% Date of device setup
+%DEVICE_DATE_DECOMISSION% Date of decomissioning
+%DEVICE_WATTAGE% Wattage
+%DEVICE_LOGS% Logs
+%DEVICE_LOGS_DATE% Date
+%DEVICE_LOGS_LOGGER% Logger
+%DEVICE_LOGS_LOG% Log
+%ADMIN_EDIT% Edit
+%ADMIN_ADD% Add
+%ADMIN_DECOMISSION% Decomission
+%ADMIN_DEVICE_ID_HEADER% Device id:
+%DEVICE_EDIT% Edit
+%DEVICE_SAVE% Save device
+%LANGUAGE% Language
+%ADMIN_NO_SCREEN% No screen selected
+%DEVICE_INTERNAL_CHECK_LAST_HEADER% Last internal check:
+%DEVICE_INTERNAL_CHECK_NEXT_HEADER% Next internal check:
+%DEVICE_EXTERNAL_CHECK_NEXT_HEADER% Next external check
+%LANGUAGE_RELOAD% Click to reload the selected language
+%LANGUAGE_CURRENT_HEADER% Current language:
+%LANGUAGE_LOAD_HEADER% Click a button to load the language

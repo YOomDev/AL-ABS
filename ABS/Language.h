@@ -1,7 +1,9 @@
 #pragma once
 
+#include <Windows.h> // file finder
 #include <fstream> // file IO
 #include <string> // strings
+#include <string.h> // std::to_string
 #include <vector> // vector lists
 
 static const bool isEqual(const std::string& one, const std::string& two) { return !(one.size() != two.size() || one.compare(two) != 0); }
@@ -34,12 +36,11 @@ private:
 	
 public:
 	Language() {
-		std::ifstream file("settings.txt");
+		std::ifstream file("settings.txt", std::ios::in);
 		if (file.is_open()) {
 			std::string tmp;
 			std::vector<std::string> tmpVec;
-			while (!file.eof()) {
-				file >> tmp;
+			while (std::getline(file, tmp)) {
 				tmpVec = splitOnce(tmp, " ");
 				if (isEqual(tmpVec[0], "%LANGUAGE%")) {
 					loadLanguage(tmpVec[1]);
@@ -58,18 +59,18 @@ public:
 	void loadLanguage(const std::string& name) {
 		if (!isEqual(name, selected)) {
 			selected = name;
-			std::ifstream file("settings.txt");
+			std::ifstream file("languages/" + name + ".txt", std::ios::in);
 			if (file.is_open()) {
 				identifiers.clear();
 				translations.clear();
 
 				std::string tmp;
 				std::vector<std::string> tmpVec;
-				while (!file.eof()) {
-					file >> tmp;
+				while (std::getline(file, tmp)) {
 					tmpVec = splitOnce(tmp, " ");
 					identifiers.push_back(tmpVec[0]);
 					translations.push_back(tmpVec[1]);
+					
 				}
 				file.close();
 			}
@@ -91,9 +92,25 @@ public:
 	const void findLanguages() { // find all the languages in the language folder, just name files without extentions
 		languages.clear();
 
-		// TODO
-
-		
-		languages.push_back("english"); // tmp
+		WIN32_FIND_DATA fd;
+		HANDLE hFind = ::FindFirstFile(L"languages/*.txt", &fd);
+		if (hFind != INVALID_HANDLE_VALUE) {
+			while (::FindNextFile(hFind, &fd)) {
+				// read all (real) files in current folder
+				// , delete '!' read other 2 default folder . and ..
+				if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+					std::wstring tmp(fd.cFileName);
+					languages.push_back(std::string(tmp.begin(), tmp.end()));
+				}
+			}
+			::FindClose(hFind);
+		}
+		for (int i = 0; i < languages.size(); i++) {
+			int idx = languages[i].find(".txt");
+			if (idx >= 0) { languages[i] = languages[i].substr(0, idx); }
+		}
+		for (int i = languages.size() - 1; i >= 0; i--) {
+			if (languages[i].size() == 0) { languages.erase(languages.begin() + i); }
+		}
 	};
 };
