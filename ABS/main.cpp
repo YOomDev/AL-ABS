@@ -15,7 +15,7 @@
 /*
 * 
 * BUGS:
-* editing a device moves it to ID=2016 which breaks loading the full data
+* after editing a device date/frequency it saves a wrong number
 * 
 * TODO:
 * Implement admin adding a device the normal way
@@ -95,18 +95,6 @@ static const ImVec4 LIGHT_GREEN = ImVec4(0.0f, 0.5f / DARK_FACTOR, 0.3f / DARK_F
 static const ImVec4 WHITE = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 static const ImVec4 GRAY = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
 
-static const time_t frequencyDateOffset[9]{
-    Date::getOffset( 0, 0, 0 + 1).t,
-    Date::getOffset( 0, 0, 1 + 1).t,
-    Date::getOffset( 0, 0, 7 + 1).t,
-    Date::getOffset( 0, 1, 0 + 1).t,
-    Date::getOffset( 0, 3, 0 + 1).t,
-    Date::getOffset( 0, 6, 0 + 1).t,
-    Date::getOffset( 1, 0, 0 + 1).t,
-    Date::getOffset( 5, 0, 0 + 1).t,
-    Date::getOffset(10, 0, 0 + 1).t
-};
-
 static void addDevice(int id) {
     DeviceData t = { id, "test" + std::to_string(id % 5), id % 2 ? true : false, "VERW" + std::to_string(id % 7), std::to_string(id % 8 + 40100), "device_type" + std::to_string(id % 7), 123, "companySupplier" + std::to_string(id % 8), "companyManufacturer" + std::to_string(id % 2), 0, 0, std::to_string(id % 15), "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 0.3f * (id % 200) + 20.0f};
     DB::addDevice(t, false);
@@ -146,6 +134,7 @@ static inline void dateInput(Date& date, std::string& str, const char* label, in
     if (str.size() == 0) { str = date.asString(); }
     else { date.fromStr(str); }
     textInput(label, str, counter);
+    date.fromStr(str);
 };
 
 static inline bool button(const std::string& label, int& counter) {
@@ -477,15 +466,15 @@ int main(int, char**) {
                                 ImGui::TableNextColumn();
                                 if (button(std::to_string(filterMenu.id[i]).c_str(), currentID)) { deviceMenu.loadDevice(filterMenu.id[i], filterMenu); loadAttempt = true; };
                                 ImGui::TableNextColumn();
-                                ImGui::Text((const char*)filterMenu.name[i].c_str());
+                                ImGui::Text(filterMenu.name[i].c_str());
                                 ImGui::TableNextColumn();
                                 ImGui::Text(filterMenu.inUse[i] ? language.getTranslation("%YES%").c_str() : language.getTranslation("%NO%").c_str());
                                 ImGui::TableNextColumn();
-                                ImGui::Text((const char*)filterMenu.location[i].c_str());
+                                ImGui::Text(filterMenu.location[i].c_str());
                                 ImGui::TableNextColumn();
-                                ImGui::Text((const char*)filterMenu.costplace[i].c_str());
+                                ImGui::Text(filterMenu.costplace[i].c_str());
                                 ImGui::TableNextColumn();
-                                if (filterMenu.nextCheckup[i].t > frequencyDateOffset[0]) { // Date.t is supposed to be a variable only used within the Date struct, but since the frequencyDateOffset's are the only other place time_t's are used it was easier to have it public
+                                if (filterMenu.nextCheckup[i].t > frequencyDateOffset[1]) { // Date.t is supposed to be a variable only used within the Date struct, but since the frequencyDateOffset's are the only other place time_t's are used it was easier to have it public
                                     bool bTmp = filterMenu.nextCheckup[i] <= today;
                                     checkBox(filterMenu.nextCheckup[i].asString(), bTmp, currentID);
                                 } else { ImGui::Text(language.getTranslation("%FILTER_NO_CHECKUPS%").c_str()); }
@@ -706,7 +695,7 @@ int main(int, char**) {
                                 ImGui::SameLine(); if (button("-", currentID)) { editDevice.data.internalFrequency--; while (editDevice.data.internalFrequency < 0) { editDevice.data.internalFrequency += 9; } }
                                 if (editDevice.data.internalFrequency) {
                                     ImGui::TableNextColumn(); dateInput(editDevice.data.lastInternalCheck, adminEditDevice.lastInternalCheckString, language.getTranslation("%DEVICE_INTERNAL_CHECK_LAST_HEADER%").c_str(), currentID);
-                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editDevice.data.lastInternalCheck + frequencyDateOffset[editDevice.data.internalFrequency]).asString()).c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editDevice.data.nextInternalCheck = Date(editDevice.data.lastInternalCheck.t + frequencyDateOffset[editDevice.data.internalFrequency])).asString()).c_str());
                                 }
 
                                 ImGui::EndTable();
@@ -726,7 +715,7 @@ int main(int, char**) {
                                 if (editDevice.data.externalFrequency) {
                                     ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_COMPANY%").c_str(), editDevice.data.externalCompany, currentID);
                                     ImGui::TableNextColumn(); dateInput(editDevice.data.lastExternalCheck, adminEditDevice.lastExternalCheckString, language.getTranslation("%DEVICE_EXTERNAL_CHECK_LAST%").c_str(), currentID);
-                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editDevice.data.lastExternalCheck + frequencyDateOffset[editDevice.data.externalFrequency]).asString()).c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editDevice.data.nextExternalCheck = Date(editDevice.data.lastExternalCheck.t + frequencyDateOffset[editDevice.data.externalFrequency])).asString()).c_str());
                                     ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_CONTRACT%").c_str(), editDevice.data.contractDescription, currentID);
                                 }
 
@@ -785,6 +774,8 @@ int main(int, char**) {
                                 // Log
                                 int c;
                                 int t = adminDevice.data.logDate.size();
+                                editDevice.data.nextExternalCheck = editDevice.data.internalFrequency ? editDevice.data.nextExternalCheck : 0;
+                                editDevice.data.nextInternalCheck = editDevice.data.externalFrequency ? editDevice.data.nextInternalCheck : 0;
                                 while ((c = adminDevice.data.logDate.size()) < editDevice.data.logDate.size()) {
                                     DB::addDeviceLog(editDevice.data.id, editDevice.data.logDate[c], editDevice.data.logLogger[c], editDevice.data.logLog[c]); // add the new logs
 

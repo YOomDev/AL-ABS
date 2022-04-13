@@ -108,6 +108,18 @@ public:
 	}
 };
 
+static const time_t frequencyDateOffset[9]{
+	Date::getOffset(0, 0, 0 + 1).t,
+	Date::getOffset(0, 0, 1 + 1).t,
+	Date::getOffset(0, 0, 7 + 1).t,
+	Date::getOffset(0, 1, 0 + 1).t,
+	Date::getOffset(0, 3, 0 + 1).t,
+	Date::getOffset(0, 6, 0 + 1).t,
+	Date::getOffset(1, 0, 0 + 1).t,
+	Date::getOffset(5, 0, 0 + 1).t,
+	Date::getOffset(10, 0, 0 + 1).t
+};
+
 //////////////////
 // Data structs //
 //////////////////
@@ -206,7 +218,7 @@ namespace DB {
 		// Setup data in reference
 		if (createConnection(connection, "db/reference.db", createRef)) {
 			// Create query
-			std::string t = "INSERT INTO `reference` (`device_id`, `device_name`, `device_in_use`, `device_location`, `device_costplace`) VALUES (";
+			std::string t = "INSERT INTO `reference` (`device_id`, `device_name`, `device_in_use`, `device_location`, `device_costplace`, `device_next_checkup`) VALUES (";
 			t += std::to_string(data.id);
 			t += ", \"";
 			t += data.name;
@@ -216,6 +228,12 @@ namespace DB {
 			t += data.location;
 			t += "\", \"";
 			t += data.costplace;
+			t += "\", \"";
+			
+			time_t tmp = 0;
+			if (data.nextExternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.t; printf_s("1 Set date to %i\n", tmp); }
+			if (data.nextInternalCheck.t < tmp && data.nextInternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.t; printf_s("2 Set date to %i\n", tmp); }
+			t += std::to_string(tmp);
 			t += "\");";
 
 			// Execute query
@@ -587,7 +605,7 @@ namespace DB {
 		// delete from reference file
 		if (createConnection(connection, "db/reference.db", createRef)) {
 			tmp = "DELETE FROM `reference` WHERE device_id=" + std::to_string(old.data.id);
-			DB::execQuery(connection, tmp.c_str());
+			if (DB::execQuery(connection, tmp.c_str())) { printf_s("Deleted %i succesfully", old.data.id); };
 		}
 
 		// delete from costplace file

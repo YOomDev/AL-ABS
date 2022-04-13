@@ -111,7 +111,6 @@ public:
 			}
 			::FindClose(hFind);
 		}
-		printf_s("%i languages before pruning\n", languages.size());
 		for (int i = 0; i < languages.size(); i++) {
 			int idx = languages[i].find(".txt");
 			if (idx >= 0) { languages[i] = languages[i].substr(0, idx); }
