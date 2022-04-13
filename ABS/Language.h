@@ -44,6 +44,7 @@ public:
 				tmpVec = splitOnce(tmp, " ");
 				if (isEqual(tmpVec[0], "%LANGUAGE%")) {
 					loadLanguage(tmpVec[1]);
+					findLanguages();
 					break;
 				}
 			}
@@ -92,19 +93,25 @@ public:
 	const void findLanguages() { // find all the languages in the language folder, just name files without extentions
 		languages.clear();
 
+		std::wstring tmp;
 		WIN32_FIND_DATA fd;
 		HANDLE hFind = ::FindFirstFile(L"languages/*.txt", &fd);
 		if (hFind != INVALID_HANDLE_VALUE) {
+			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) { // this is a fix so it also displays the first file, the while loop only gives the files after the first one
+				tmp = fd.cFileName;
+				languages.push_back(std::string(tmp.begin(), tmp.end()));
+			}
 			while (::FindNextFile(hFind, &fd)) {
 				// read all (real) files in current folder
 				// , delete '!' read other 2 default folder . and ..
 				if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-					std::wstring tmp(fd.cFileName);
+					tmp = fd.cFileName;
 					languages.push_back(std::string(tmp.begin(), tmp.end()));
 				}
 			}
 			::FindClose(hFind);
 		}
+		printf_s("%i languages before pruning\n", languages.size());
 		for (int i = 0; i < languages.size(); i++) {
 			int idx = languages[i].find(".txt");
 			if (idx >= 0) { languages[i] = languages[i].substr(0, idx); }

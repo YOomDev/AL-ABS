@@ -1,0 +1,78 @@
+%FILTER% Filter
+%DEVICE% Apparaat
+%YES% Ja
+%NO% Nee
+%ALL% Alles
+%FILTER_IN_USE% Is in gebruik
+%FILTER_LOCATION% Locatie
+%FILTER_COSTPLACE% Kostplaats
+%FILTER_CHECKUP% Controles
+%FILTER_DEVICES% Apparaten
+%FILTER_ID% ID
+%FILTER_NAME% Naam
+%FILTER_NO_CHECKUPS% Geen controle nodig
+%RELOAD_MESSAGE% Het kan zijn dat er iets verandert is terwijl je in een ander menu was, dus we willen je graag aanraden om op de herlaad knop te klikken...
+%PRESS_RELOAD% Klik hier om te herladen
+%SEARCH_HEADER% Zoeken:
+%SEARCH_DEVICE% Zoek naar een apparaat
+%ID% ID
+%DEVICE_ID_HEADER% Apparaat ID:
+%DEVICE_INFO% Info
+%DEVICE_VALUE% Waarde
+%DEVICE_INSTRUMENT% Instrument
+%DEVICE_MODEL% Model
+%DEVICE_SERIAL_NUMBER% Serie nummer
+%DEVICE_SUPPLIER% Leverancier
+%DEVICE_DATE_PURCHASE% Datum van aankoop
+%DEVICE_DATE_WARRANTY% Datum van het einde van de garantie
+%DEVICE_MANUFACTURER% Fabrikant
+%DEVICE_DEPARTMENT% Afdeling
+%DEVICE_COSTPLACE% Kostplaats ID
+%DEVICE_COSTPLACE_NAME% Naam van de kostplaats
+%DEVICE_INTERNAL_CHECK% Interne controle
+%DEVICE_INTERNAL_CHECK_FREQUENCY% Frequentie van de interne controle
+%DEVICE_INTERNAL_CHECK_LAST% Laatste interne controle
+%DEVICE_INTERNAL_CHECK_NEXT% Volgende interne controle
+%FILTER_SELECT_ALL% Selecteer alles
+%DEVICE_NOT_FOUND% Er kon geen apparaat met dit ID nummer gevonden worden
+%DEVICE_EXTERNAL_CHECK% Externe controle
+%DEVICE_EXTERNAL_CHECK_FREQUENCY% Frequentie van de externe controle
+%DEVICE_EXTERNAL_CHECK_COMPANY% Extern bedrijf
+%DEVICE_EXTERNAL_CHECK_LAST% Laatste externe controle
+%DEVICE_EXTERNAL_CHECK_NEXT% Volgende externe controle
+%DEVICE_EXTERNAL_CHECK_CONTRACT% Contract met het externe bedrijf
+%DEVICE_ADMINISTRATION% Administratie
+%DEVICE_USEABILITY_CHECK_FREQUENCY% Controle van de bruikbaarheid
+%FREQ_DAILY% Dagelijkse controle
+%FREQ_NO_CHECKS% Geen controle
+%FREQ_WEEKLY% Wekelijkse controle
+%FREQ_MONTHLY% Maandelijks controle
+%FREQ_QUARTERLY% Kwart jaarlijkse controle
+%FREQ_BI_YEARLY% Half-jaarlijkse controle
+%FREQ_YEARLY% Jaarlijkse controle
+%FREQ_HALF_DECENIUM% Een controle iedere 5 jaar
+%FREQ_DECENIUM% Een controle ieder decennia
+%DEVICE_STATUS% Status
+%DEVICE_IN_USE% Is in gebruik
+%DEVICE_DATE_SETUP% Datum van het opzetten van het apparaat
+%DEVICE_DATE_DECOMISSION% Datum van het afkeuren van het apparaat
+%DEVICE_WATTAGE% Wattage
+%DEVICE_LOGS% Logboek
+%DEVICE_LOGS_DATE% Datum
+%DEVICE_LOGS_LOGGER% Logger
+%DEVICE_LOGS_LOG% Log
+%ADMIN% Administratie
+%ADMIN_EDIT% Aanpassen
+%ADMIN_ADD% Toevoegen
+%ADMIN_DECOMISSION% Afkeuren
+%ADMIN_DEVICE_ID_HEADER% Apparaat ID: 
+%DEVICE_EDIT% Aanpassen
+%DEVICE_SAVE% Apparaat opslaan
+%LANGUAGE% Taal
+%ADMIN_NO_SCREEN% Geen scherm geselecteerd
+%DEVICE_INTERNAL_CHECK_LAST_HEADER% Laatste interne controle:
+%DEVICE_INTERNAL_CHECK_NEXT_HEADER% Volgende interne controle:
+%DEVICE_EXTERNAL_CHECK_NEXT_HEADER% Volgende externe controle:
+%LANGUAGE_RELOAD% Klik om de huidige taal te herladen
+%LANGUAGE_CURRENT_HEADER% Huidige taal:
+%LANGUAGE_LOAD_HEADER% Klik op een knop om die taal te laden

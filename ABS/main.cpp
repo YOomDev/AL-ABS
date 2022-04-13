@@ -365,8 +365,8 @@ int main(int, char**) {
 
                     if (screen != CurrentScreen::FILTER) { recommendReload = true; }
                     if (recommendReload) {
-                        ImGui::Text("Something might have changed during your time in a different tab, we would like to recommend you to reload the database...");
-                        if (button("Press this to reload", currentID)) { recommendReload = false; reloadFilter = true; }
+                        ImGui::Text(language.getTranslation("%RELOAD_MESSAGE%").c_str());
+                        if (button(language.getTranslation("%PRESS_RELOAD%").c_str(), currentID)) { recommendReload = false; reloadFilter = true; }
                         ImGui::Separator();
                     }
 
@@ -655,7 +655,7 @@ int main(int, char**) {
                     screen = CurrentScreen::DEVICE;
                     ImGui::EndTabItem();
                 }
-                if (ImGui::BeginTabItem("Admin", nullptr, NULL)) {
+                if (ImGui::BeginTabItem(language.getTranslation("%ADMIN%").c_str(), nullptr, NULL)) {
                     //if (screen != CurrentScreen::ADMIN) {}
                     if (editDevice.isLoaded && adminScreen != AdminScreen::EDIT) { editDevice.unloadDevice(); }
 

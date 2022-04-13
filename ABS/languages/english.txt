@@ -75,3 +75,4 @@
 %LANGUAGE_RELOAD% Click to reload the selected language
 %LANGUAGE_CURRENT_HEADER% Current language:
 %LANGUAGE_LOAD_HEADER% Click a button to load the language
+%ADMIN% Admin
