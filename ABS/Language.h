@@ -71,7 +71,6 @@ public:
 					tmpVec = splitOnce(tmp, " ");
 					identifiers.push_back(tmpVec[0]);
 					translations.push_back(tmpVec[1]);
-					
 				}
 				file.close();
 			}
@@ -102,8 +101,6 @@ public:
 				languages.push_back(std::string(tmp.begin(), tmp.end()));
 			}
 			while (::FindNextFile(hFind, &fd)) {
-				// read all (real) files in current folder
-				// , delete '!' read other 2 default folder . and ..
 				if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 					tmp = fd.cFileName;
 					languages.push_back(std::string(tmp.begin(), tmp.end()));

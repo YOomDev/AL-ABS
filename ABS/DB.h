@@ -54,7 +54,7 @@ public:
 	Date operator- (time_t o) { return Date(t - o  ); }
 
 	const std::string asString() const { return std::to_string(d->tm_year + 1900) + "-" + std::to_string(d->tm_mon + 1) + "-" + std::to_string(d->tm_mday); }
-	const uint64_t asInt64() { return t; }
+	const uint64_t asInt64() const { return t; }
 	const void fromStr(std::string& str) {
 		std::string tmp = str;
 		filterDateInput(tmp);
@@ -231,8 +231,8 @@ namespace DB {
 			t += "\", \"";
 			
 			time_t tmp = 0;
-			if (data.nextExternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.t; printf_s("1 Set date to %i\n", tmp); }
-			if (data.nextInternalCheck.t < tmp && data.nextInternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.t; printf_s("2 Set date to %i\n", tmp); }
+			if (data.externalFrequency && data.nextExternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.t; }
+			if (data.internalFrequency && (tmp == 0 || data.nextInternalCheck.t < tmp) && data.nextInternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.t; }
 			t += std::to_string(tmp);
 			t += "\");";
 
@@ -261,9 +261,9 @@ namespace DB {
 			t += "\", \"";
 			t += data.manufacturer;
 			t += "\", ";
-			t += data.purchaseDate.asString();
+			t += std::to_string(data.purchaseDate.t);
 			t += ", ";
-			t += data.warrantyDate.asString();
+			t += std::to_string(data.warrantyDate.t);
 			t += ", \"";
 			t += data.department;
 			t += "\", \"";
@@ -285,9 +285,9 @@ namespace DB {
 			t += ", ";
 			t += std::to_string(data.internalFrequency);
 			t += ", ";
-			t += data.lastInternalCheck.asString(); // date
+			t += std::to_string(data.lastInternalCheck.t);
 			t += ", ";
-			t += data.nextInternalCheck.asString(); // date
+			t += std::to_string(data.nextInternalCheck.t);
 
 			// external check
 			t += ", \"";
@@ -295,17 +295,17 @@ namespace DB {
 			t += "\", ";
 			t += std::to_string(data.externalFrequency);
 			t += ", ";
-			t += data.lastExternalCheck.asString(); // date
+			t += std::to_string(data.lastExternalCheck.t); // date
 			t += ", ";
-			t += data.nextExternalCheck.asString(); // date
+			t += std::to_string(data.nextExternalCheck.t); // date
 			t += ", \"";
 			t += data.contractDescription;
 
 			// status
 			t += "\", ";
-			t += data.dateOfSetup.asString(); // date/string?
+			t += std::to_string(data.dateOfSetup.t); // date/string?
 			t += ", ";
-			t += data.dateOfDecommissioning.asString(); // date/string?
+			t += std::to_string(data.dateOfDecommissioning.t); // date/string?
 			t += ", ";
 			t += std::to_string(data.wattage);
 			t += ");";

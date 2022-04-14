@@ -232,7 +232,7 @@ int main(int, char**) {
     bool displayedDevices = false;
     bool isEnabled; // for filter display
     bool canDisplay; // for filter display
-    int currentID; // used for enabling buttons/checkboxes/inputs with same labels
+    int currentID; // used for fixing buttons/checkboxes/inputs with same labels
 
     // Device screen
     int searchId = 0;
@@ -695,7 +695,7 @@ int main(int, char**) {
                                 ImGui::SameLine(); if (button("-", currentID)) { editDevice.data.internalFrequency--; while (editDevice.data.internalFrequency < 0) { editDevice.data.internalFrequency += 9; } }
                                 if (editDevice.data.internalFrequency) {
                                     ImGui::TableNextColumn(); dateInput(editDevice.data.lastInternalCheck, adminEditDevice.lastInternalCheckString, language.getTranslation("%DEVICE_INTERNAL_CHECK_LAST_HEADER%").c_str(), currentID);
-                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editDevice.data.nextInternalCheck = Date(editDevice.data.lastInternalCheck.t + frequencyDateOffset[editDevice.data.internalFrequency])).asString()).c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editDevice.data.nextInternalCheck = editDevice.data.lastInternalCheck + frequencyDateOffset[editDevice.data.internalFrequency]).asString()).c_str());
                                 }
 
                                 ImGui::EndTable();
@@ -715,7 +715,7 @@ int main(int, char**) {
                                 if (editDevice.data.externalFrequency) {
                                     ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_COMPANY%").c_str(), editDevice.data.externalCompany, currentID);
                                     ImGui::TableNextColumn(); dateInput(editDevice.data.lastExternalCheck, adminEditDevice.lastExternalCheckString, language.getTranslation("%DEVICE_EXTERNAL_CHECK_LAST%").c_str(), currentID);
-                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editDevice.data.nextExternalCheck = Date(editDevice.data.lastExternalCheck.t + frequencyDateOffset[editDevice.data.externalFrequency])).asString()).c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editDevice.data.nextExternalCheck = editDevice.data.lastExternalCheck + frequencyDateOffset[editDevice.data.externalFrequency]).asString()).c_str());
                                     ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_CONTRACT%").c_str(), editDevice.data.contractDescription, currentID);
                                 }
 
