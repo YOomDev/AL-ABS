@@ -74,7 +74,7 @@ void CleanupDeviceD3D();
 void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static std::string frequencyNotation[9] = { // switch from this to language based notations
+static std::string frequencyNotation[9] = {
     "%FREQ_NO_CHECKS%",
     "%FREQ_DAILY%",
     "%FREQ_WEEKLY%",
@@ -89,11 +89,16 @@ static std::string frequencyNotation[9] = { // switch from this to language base
 // Styling the program
 static const float DARK_FACTOR = 0.7f;
 // colors
-static const ImVec4 GREEN = ImVec4(0.0f, 0.5f, 0.3f, 1.0f);
-static const ImVec4 DARK_GREEN = ImVec4(0.0f, 0.5f * DARK_FACTOR, 0.3f * DARK_FACTOR, 1.0f);
-static const ImVec4 LIGHT_GREEN = ImVec4(0.0f, 0.5f / DARK_FACTOR, 0.3f / DARK_FACTOR, 1.0f);
+static const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 static const ImVec4 WHITE = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 static const ImVec4 GRAY = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+#define GREENR 0.00784313725f
+#define GREENG 0.52156862745f
+#define GREENB 0.29803921568f
+static const ImVec4 GREEN = ImVec4(GREENR, GREENG, GREENB, 1.0f);
+static const ImVec4 DARK_GREEN = ImVec4(GREENR, GREENG * DARK_FACTOR, GREENB * DARK_FACTOR, 1.0f);
+static const ImVec4 DARK_DARK_GREEN = ImVec4(GREENR, GREENG * DARK_FACTOR * DARK_FACTOR, GREENB * DARK_FACTOR * DARK_FACTOR, 1.0f);
+static const ImVec4 LIGHT_GREEN = ImVec4(GREENR, GREENG / DARK_FACTOR, GREENB / DARK_FACTOR, 1.0f);
 
 static void addDevice(int id) {
     DeviceData t = { id, "test" + std::to_string(id % 5), id % 2 ? true : false, "VERW" + std::to_string(id % 7), std::to_string(id % 8 + 40100), "device_type" + std::to_string(id % 7), 123, "companySupplier" + std::to_string(id % 8), "companyManufacturer" + std::to_string(id % 2), 0, 0, std::to_string(id % 15), "WetChemSpectro", "Admin", "Replacer", true, false, 0, 0, 0, 0, "ExtCheck", 0, 0, 0, "ContractDesc", 0, 0, 0.3f * (id % 200) + 20.0f};
@@ -187,7 +192,6 @@ int main(int, char**) {
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX9_Init(g_pd3dDevice);
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -242,6 +246,8 @@ int main(int, char**) {
     AdminScreen adminScreen = AdminScreen::NONE;
     DeviceMenu adminDevice;
     DeviceMenu editDevice;
+    DeviceData& adminData = adminData;
+    DeviceData& editData = editData;
     EditDeviceDates adminEditDevice;
     EditDeviceDates adminAddDevice;
 
@@ -271,7 +277,7 @@ int main(int, char**) {
     style->Colors[ImGuiCol_ScrollbarGrabHovered] = LIGHT_GREEN;
     style->Colors[ImGuiCol_ScrollbarGrabActive] = GREEN;
     // background of checkbox & inputs
-    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.0f, 0.5f * DARK_FACTOR * DARK_FACTOR, 0.3f * DARK_FACTOR * DARK_FACTOR, 1.0f); // DARK_DARK_GREEN
+    style->Colors[ImGuiCol_FrameBg] = DARK_DARK_GREEN;
     style->Colors[ImGuiCol_FrameBgHovered] = GREEN;
     style->Colors[ImGuiCol_FrameBgActive] = DARK_GREEN;
 
@@ -656,29 +662,29 @@ int main(int, char**) {
                     switch (adminScreen) {
                     case AdminScreen::EDIT: {
                         ImGui::Text(language.getTranslation("%SEARCH_HEADER%").c_str());
-                        if (button(language.getTranslation("%SEARCH_DEVICE%").c_str(), currentID)) { adminDevice.loadDevice(adminSearch, filterMenu); editDevice.loadDevice(adminSearch, filterMenu); }
+                        if (button(language.getTranslation("%SEARCH_DEVICE%").c_str(), currentID)) { adminDevice.loadDevice(adminSearch, filterMenu); editDevice.loadDevice(adminSearch, filterMenu); adminData = adminDevice.data; editData = editDevice.data; }
                         ImGui::SameLine(); intInput(language.getTranslation("%ID%").c_str(), adminSearch, currentID);
                         ImGui::Separator();
                         if (!adminDevice.isLoaded) { ImGui::Text(language.getTranslation("%DEVICE_NOT_FOUND%").c_str()); }
                         else {
-                            ImGui::Text((language.getTranslation("%ADMIN_DEVICE_ID_HEADER%") + " " + std::to_string(adminDevice.data.id)).c_str());
+                            ImGui::Text((language.getTranslation("%ADMIN_DEVICE_ID_HEADER%") + " " + std::to_string(adminData.id)).c_str());
                             if (ImGui::BeginTable("Device", 1, tableFlags)) {
                                 ImGui::TableSetupColumn(language.getTranslation("%DEVICE_EDIT%").c_str());
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_INSTRUMENT%").c_str(), editDevice.data.name, currentID);
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_MODEL%").c_str(), editDevice.data.model, currentID);
-                                ImGui::TableNextColumn(); intInput (language.getTranslation("%DEVICE_SERIAL_NUMBER%").c_str(), editDevice.data.serialnumber, currentID);
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_SUPPLIER%").c_str(), editDevice.data.supplier, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_INSTRUMENT%").c_str(), editData.name, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_MODEL%").c_str(), editData.model, currentID);
+                                ImGui::TableNextColumn(); intInput (language.getTranslation("%DEVICE_SERIAL_NUMBER%").c_str(), editData.serialnumber, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_SUPPLIER%").c_str(), editData.supplier, currentID);
 
-                                ImGui::TableNextColumn(); dateInput(editDevice.data.purchaseDate, adminEditDevice.purchaseDateString, language.getTranslation("%DEVICE_DATE_PURCHASE%").c_str(), currentID);
-                                ImGui::TableNextColumn(); dateInput(editDevice.data.warrantyDate, adminEditDevice.warrantyDateString, language.getTranslation("%DEVICE_DATE_WARRANTY%").c_str(), currentID);
+                                ImGui::TableNextColumn(); dateInput(editData.purchaseDate, adminEditDevice.purchaseDateString, language.getTranslation("%DEVICE_DATE_PURCHASE%").c_str(), currentID);
+                                ImGui::TableNextColumn(); dateInput(editData.warrantyDate, adminEditDevice.warrantyDateString, language.getTranslation("%DEVICE_DATE_WARRANTY%").c_str(), currentID);
 
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_MANUFACTURER%").c_str(), editDevice.data.manufacturer, currentID);
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_DEPARTMENT%").c_str(), editDevice.data.department, currentID);
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_COSTPLACE%").c_str(), editDevice.data.costplace, currentID);
-                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_COSTPLACE_NAME%").c_str(), editDevice.data.costplaceName, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_MANUFACTURER%").c_str(), editData.manufacturer, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_DEPARTMENT%").c_str(), editData.department, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_COSTPLACE%").c_str(), editData.costplace, currentID);
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_COSTPLACE_NAME%").c_str(), editData.costplaceName, currentID);
 
                                 ImGui::EndTable();
                             }
@@ -690,12 +696,12 @@ int main(int, char**) {
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                                 ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_INTERNAL_CHECK_FREQUENCY%").c_str());
-                                ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editDevice.data.internalFrequency]).c_str());
-                                ImGui::SameLine(); if (button("+", currentID)) { editDevice.data.internalFrequency++; editDevice.data.internalFrequency %= 9; }
-                                ImGui::SameLine(); if (button("-", currentID)) { editDevice.data.internalFrequency--; while (editDevice.data.internalFrequency < 0) { editDevice.data.internalFrequency += 9; } }
-                                if (editDevice.data.internalFrequency) {
-                                    ImGui::TableNextColumn(); dateInput(editDevice.data.lastInternalCheck, adminEditDevice.lastInternalCheckString, language.getTranslation("%DEVICE_INTERNAL_CHECK_LAST_HEADER%").c_str(), currentID);
-                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editDevice.data.nextInternalCheck = editDevice.data.lastInternalCheck + frequencyDateOffset[editDevice.data.internalFrequency]).asString()).c_str());
+                                ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editData.internalFrequency]).c_str());
+                                ImGui::SameLine(); if (button("+", currentID)) { editData.internalFrequency++; editData.internalFrequency %= 9; }
+                                ImGui::SameLine(); if (button("-", currentID)) { editData.internalFrequency--; while (editData.internalFrequency < 0) { editData.internalFrequency += 9; } }
+                                if (editData.internalFrequency) {
+                                    ImGui::TableNextColumn(); dateInput(editData.lastInternalCheck, adminEditDevice.lastInternalCheckString, language.getTranslation("%DEVICE_INTERNAL_CHECK_LAST_HEADER%").c_str(), currentID);
+                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editData.nextInternalCheck = editData.lastInternalCheck + frequencyDateOffset[editData.internalFrequency]).asString()).c_str());
                                 }
 
                                 ImGui::EndTable();
@@ -708,15 +714,15 @@ int main(int, char**) {
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                                 ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_EXTERNAL_CHECK_FREQUENCY%").c_str());
-                                ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editDevice.data.externalFrequency]).c_str());
-                                ImGui::SameLine(); if (button("+", currentID)) { editDevice.data.externalFrequency++; editDevice.data.externalFrequency %= 9; }
-                                ImGui::SameLine(); if (button("-", currentID)) { editDevice.data.externalFrequency--; while (editDevice.data.externalFrequency < 0) { editDevice.data.externalFrequency += 9; } }
+                                ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editData.externalFrequency]).c_str());
+                                ImGui::SameLine(); if (button("+", currentID)) { editData.externalFrequency++; editData.externalFrequency %= 9; }
+                                ImGui::SameLine(); if (button("-", currentID)) { editData.externalFrequency--; while (editData.externalFrequency < 0) { editData.externalFrequency += 9; } }
 
-                                if (editDevice.data.externalFrequency) {
-                                    ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_COMPANY%").c_str(), editDevice.data.externalCompany, currentID);
-                                    ImGui::TableNextColumn(); dateInput(editDevice.data.lastExternalCheck, adminEditDevice.lastExternalCheckString, language.getTranslation("%DEVICE_EXTERNAL_CHECK_LAST%").c_str(), currentID);
-                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editDevice.data.nextExternalCheck = editDevice.data.lastExternalCheck + frequencyDateOffset[editDevice.data.externalFrequency]).asString()).c_str());
-                                    ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_CONTRACT%").c_str(), editDevice.data.contractDescription, currentID);
+                                if (editData.externalFrequency) {
+                                    ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_COMPANY%").c_str(), editData.externalCompany, currentID);
+                                    ImGui::TableNextColumn(); dateInput(editData.lastExternalCheck, adminEditDevice.lastExternalCheckString, language.getTranslation("%DEVICE_EXTERNAL_CHECK_LAST%").c_str(), currentID);
+                                    ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editData.nextExternalCheck = editData.lastExternalCheck + frequencyDateOffset[editData.externalFrequency]).asString()).c_str());
+                                    ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_CONTRACT%").c_str(), editData.contractDescription, currentID);
                                 }
 
                                 ImGui::EndTable();
@@ -729,9 +735,9 @@ int main(int, char**) {
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
                                 ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_USEABILITY_CHECK_FREQUENCY%").c_str());
-                                ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editDevice.data.useabilityFrequency]).c_str());
-                                ImGui::SameLine(); if (button("+", currentID)) { editDevice.data.useabilityFrequency++; editDevice.data.useabilityFrequency %= 9; }
-                                ImGui::SameLine(); if (button("-", currentID)) { editDevice.data.useabilityFrequency--; while (editDevice.data.useabilityFrequency < 0) { editDevice.data.useabilityFrequency += 9; } }
+                                ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editData.useabilityFrequency]).c_str());
+                                ImGui::SameLine(); if (button("+", currentID)) { editData.useabilityFrequency++; editData.useabilityFrequency %= 9; }
+                                ImGui::SameLine(); if (button("-", currentID)) { editData.useabilityFrequency--; while (editData.useabilityFrequency < 0) { editData.useabilityFrequency += 9; } }
 
                                 ImGui::EndTable();
                             }
@@ -742,10 +748,10 @@ int main(int, char**) {
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
-                                ImGui::TableNextColumn(); checkBox(language.getTranslation("%DEVICE_IN_USE%").c_str(), editDevice.data.inUse, currentID);
-                                ImGui::TableNextColumn(); dateInput(editDevice.data.dateOfSetup, adminEditDevice.dateOfSetupString, language.getTranslation("%DEVICE_DATE_SETUP%").c_str(), currentID);
-                                ImGui::TableNextColumn(); dateInput(editDevice.data.dateOfDecommissioning, adminEditDevice.dateOfDecommissioningString, language.getTranslation("%DEVICE_DATE_DECOMISSION%").c_str(), currentID);
-                                ImGui::TableNextColumn(); ImGui::InputFloat(language.getTranslation("%DEVICE_WATTAGE%").c_str(), &editDevice.data.wattage);
+                                ImGui::TableNextColumn(); checkBox(language.getTranslation("%DEVICE_IN_USE%").c_str(), editData.inUse, currentID);
+                                ImGui::TableNextColumn(); dateInput(editData.dateOfSetup, adminEditDevice.dateOfSetupString, language.getTranslation("%DEVICE_DATE_SETUP%").c_str(), currentID);
+                                ImGui::TableNextColumn(); dateInput(editData.dateOfDecommissioning, adminEditDevice.dateOfDecommissioningString, language.getTranslation("%DEVICE_DATE_DECOMISSION%").c_str(), currentID);
+                                ImGui::TableNextColumn(); ImGui::InputFloat(language.getTranslation("%DEVICE_WATTAGE%").c_str(), &editData.wattage);
 
                                 ImGui::EndTable();
                             }
@@ -758,10 +764,10 @@ int main(int, char**) {
                                 ImGui::TableHeadersRow();
                                 ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
 
-                                for (int i = 0; i < editDevice.data.logDate.size(); i++) {
-                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.logDate[i].asString().c_str());
-                                    ImGui::TableNextColumn(); ImGui::Text(editDevice.data.logLogger[i].c_str());
-                                    ImGui::TableNextColumn(); ImGui::TextWrapped(editDevice.data.logLog[i].c_str());
+                                for (int i = 0; i < editData.logDate.size(); i++) {
+                                    ImGui::TableNextColumn(); ImGui::Text(editData.logDate[i].asString().c_str());
+                                    ImGui::TableNextColumn(); ImGui::Text(editData.logLogger[i].c_str());
+                                    ImGui::TableNextColumn(); ImGui::TextWrapped(editData.logLog[i].c_str());
                                 }
 
                                 ImGui::EndTable();
@@ -769,38 +775,38 @@ int main(int, char**) {
 
                             if (button(language.getTranslation("%DEVICE_SAVE%").c_str(), currentID)) {
                                 // Reference & costplace
-                                DB::moveDevice(adminDevice, editDevice); // removes from old location and adds to new location (even if same location for ease of programming)
+                                DB::moveDevice(adminData, editData); // removes from old location and adds to new location (even if same location for ease of programming)
 
                                 // Log
                                 int c;
-                                int t = adminDevice.data.logDate.size();
-                                editDevice.data.nextExternalCheck = editDevice.data.internalFrequency ? editDevice.data.nextExternalCheck : 0;
-                                editDevice.data.nextInternalCheck = editDevice.data.externalFrequency ? editDevice.data.nextInternalCheck : 0;
-                                while ((c = adminDevice.data.logDate.size()) < editDevice.data.logDate.size()) {
-                                    DB::addDeviceLog(editDevice.data.id, editDevice.data.logDate[c], editDevice.data.logLogger[c], editDevice.data.logLog[c]); // add the new logs
+                                int t = adminData.logDate.size();
+                                editData.nextExternalCheck = editData.internalFrequency ? editData.nextExternalCheck : 0;
+                                editData.nextInternalCheck = editData.externalFrequency ? editData.nextInternalCheck : 0;
+                                while ((c = adminData.logDate.size()) < editData.logDate.size()) {
+                                    DB::addDeviceLog(editData.id, editData.logDate[c], editData.logLogger[c], editData.logLog[c]); // add the new logs
 
                                     // add to adminDevice for next for loop so it doesnt have to push changes or have different array sizes
-                                    adminDevice.data.logDate.push_back(editDevice.data.logDate[c]);
-                                    adminDevice.data.logLogger.push_back(editDevice.data.logLogger[c]);
-                                    adminDevice.data.logLog.push_back(editDevice.data.logLog[c]);
+                                    adminData.logDate.push_back(editData.logDate[c]);
+                                    adminData.logLogger.push_back(editData.logLogger[c]);
+                                    adminData.logLog.push_back(editData.logLog[c]);
                                 }
                                 for (int q = 0; q < t; q++) { // update the old logs if needed
                                     std::string tmp = "UPDATE `log` SET ";
                                     bool hasAdded = false;
-                                    if (adminDevice.data.logDate[q] != editDevice.data.logDate[q]) {
-                                        tmp += "`date` = "+ std::to_string(editDevice.data.logDate[q].asInt64());
+                                    if (adminData.logDate[q] != editData.logDate[q]) {
+                                        tmp += "`date` = "+ std::to_string(editData.logDate[q].asInt64());
                                         hasAdded = true;
                                     }
-                                    if (adminDevice.data.logLogger[q].compare(editDevice.data.logLogger[q]) != 0) {
+                                    if (adminData.logLogger[q].compare(editData.logLogger[q]) != 0) {
                                         if (hasAdded) { tmp += ", "; } else { hasAdded = true; }
-                                        tmp += "`logger` = \"" + editDevice.data.logLogger[q]+"\"";
+                                        tmp += "`logger` = \"" + editData.logLogger[q]+"\"";
                                     }
-                                    if (adminDevice.data.logLog[q].compare(editDevice.data.logLog[q]) != 0) {
+                                    if (adminData.logLog[q].compare(editData.logLog[q]) != 0) {
                                         if (hasAdded) { tmp += ", "; } else { hasAdded = true; }
-                                        tmp += "`log` = \"" + editDevice.data.logLog[q] + "\"";
+                                        tmp += "`log` = \"" + editData.logLog[q] + "\"";
                                     }
-                                    tmp += " WHERE `date` = " + std::to_string(editDevice.data.logDate[q].asInt64()) + ";";
-                                    if (hasAdded) { DB::updateLog(editDevice.data.id, tmp.c_str()); }
+                                    tmp += " WHERE `date` = " + std::to_string(editData.logDate[q].asInt64()) + ";";
+                                    if (hasAdded) { DB::updateLog(editData.id, tmp.c_str()); }
                                 }
                             }
                         }

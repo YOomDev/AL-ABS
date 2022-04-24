@@ -11,6 +11,11 @@ static const char* createRef = "CREATE TABLE IF NOT EXISTS `reference` (`device_
 static const char* createDev = "CREATE TABLE IF NOT EXISTS `device` (`device_id` INT NOT NULL UNIQUE, `model` TEXT, `serial_number` INT, `supplier` TEXT, `manufacturer` TEXT, `purchase_date` BIGINT, `warranty_date` BIGINT, `department` TEXT, `costplace_name` TEXT, `administrator` TEXT, `replacement` TEXT, `has_log` BIT(1), `has_manual` BIT(1), `fitness_freq` INT, `internal_freq` INT, `last_internal_check` BIGINT, `next_internal_check` BIGINT, `external_company` TEXT, `external_freq` INT, `last_external_check` BIGINT, `next_external_check` BIGINT, `contract_desc` TEXT, `setup_date` BIGINT, `decommission_date` BIGINT, `wattage` FLOAT, PRIMARY KEY (`device_id`));";
 static const char* createLog = "CREATE TABLE IF NOT EXISTS `log` (`date` BIGINT NOT NULL UNIQUE, `logger` TEXT NOT NULL, `log` TEXT NOT NULL, PRIMARY KEY (`date`));";
 static const std::string unused = "outOfUse";
+static const char* dbRef = "db/reference.db";
+static const std::string dbCostplace = "db/costplaces/";
+static const std::string dbLogs = "db/logs/";
+static const std::string dbExtension = ".db";
+
 ///////////
 // Dates //
 ///////////
@@ -109,14 +114,14 @@ public:
 };
 
 static const time_t frequencyDateOffset[9]{
-	Date::getOffset(0, 0, 0 + 1).t,
-	Date::getOffset(0, 0, 1 + 1).t,
-	Date::getOffset(0, 0, 7 + 1).t,
-	Date::getOffset(0, 1, 0 + 1).t,
-	Date::getOffset(0, 3, 0 + 1).t,
-	Date::getOffset(0, 6, 0 + 1).t,
-	Date::getOffset(1, 0, 0 + 1).t,
-	Date::getOffset(5, 0, 0 + 1).t,
+	Date::getOffset( 0, 0, 0 + 1).t,
+	Date::getOffset( 0, 0, 1 + 1).t,
+	Date::getOffset( 0, 0, 7 + 1).t,
+	Date::getOffset( 0, 1, 0 + 1).t,
+	Date::getOffset( 0, 3, 0 + 1).t,
+	Date::getOffset( 0, 6, 0 + 1).t,
+	Date::getOffset( 1, 0, 0 + 1).t,
+	Date::getOffset( 5, 0, 0 + 1).t,
 	Date::getOffset(10, 0, 0 + 1).t
 };
 
@@ -212,40 +217,44 @@ namespace DB {
 		return execQuery(con, create);
 	}
 
+	static const void closeConnection(sqlite3*& con) { sqlite3_close(con); con = nullptr; }
+
 	static bool addDevice(const DeviceData& data, bool old) {
-		sqlite3* connection;
+		sqlite3* connection = nullptr;
 
-		// Setup data in reference
-		if (createConnection(connection, "db/reference.db", createRef)) {
-			// Create query
-			std::string t = "INSERT INTO `reference` (`device_id`, `device_name`, `device_in_use`, `device_location`, `device_costplace`, `device_next_checkup`) VALUES (";
-			t += std::to_string(data.id);
-			t += ", \"";
-			t += data.name;
-			t += "\", ";
-			t += data.inUse ? "1" : "0";
-			t += ", \"";
-			t += data.location;
-			t += "\", \"";
-			t += data.costplace;
-			t += "\", \"";
-			
-			time_t tmp = 0;
-			if (data.externalFrequency && data.nextExternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.t; }
-			if (data.internalFrequency && (tmp == 0 || data.nextInternalCheck.t < tmp) && data.nextInternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.t; }
-			t += std::to_string(tmp);
-			t += "\");";
+		if (!old) { // dont do this if there is a old entry, DB::moveDevice() updates this already before calling this function
+			// Setup data in reference
+			if (createConnection(connection, dbRef, createRef)) {
+				// Create query
+				std::string t = "INSERT INTO `reference` (`device_id`, `device_name`, `device_in_use`, `device_location`, `device_costplace`, `device_next_checkup`) VALUES (";
+				t += std::to_string(data.id);
+				t += ", \"";
+				t += data.name;
+				t += "\", ";
+				t += data.inUse ? "1" : "0";
+				t += ", \"";
+				t += data.location;
+				t += "\", \"";
+				t += data.costplace;
+				t += "\", \"";
 
-			// Execute query
-			if (!execQuery(connection, t.c_str())) { return false; }
+				time_t tmp = 0;
+				if (data.externalFrequency && data.nextExternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.t; }
+				if (data.internalFrequency && (tmp == 0 || data.nextInternalCheck.t < tmp) && data.nextInternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.t; }
+				t += std::to_string(tmp);
+				t += "\");";
 
-			// Close connection
-			sqlite3_close(connection);
-			connection = nullptr;
+				// Execute query
+				if (!execQuery(connection, t.c_str())) { return false; }
+
+				// Close connection
+				sqlite3_close(connection);
+				connection = nullptr;
+			}
 		}
 
 		// Setup device info in its used costplace database
-		std::string tmp = "db/costplaces/" + (data.inUse ? data.costplace : unused) + ".db";
+		std::string tmp = dbCostplace + (data.inUse ? data.costplace : unused) + dbExtension;
 		if (createConnection(connection, tmp.c_str(), createDev)) {
 			// create query
 			std::string t = "INSERT INTO `device` (device_id, model, serial_number, supplier, manufacturer, purchase_date, warranty_date, department, costplace_name, administrator, replacement, has_log, has_manual, fitness_freq, internal_freq, last_internal_check, next_internal_check, external_company, external_freq, last_external_check, next_external_check, contract_desc, setup_date, decommission_date, wattage) VALUES (";
@@ -314,13 +323,12 @@ namespace DB {
 			execQuery(connection, t.c_str());
 
 			// close connection
-			sqlite3_close(connection);
-			connection = nullptr;
+			closeConnection(connection);
 		}
 
 		if (!old) {
 			// Setup a log database entry file
-			tmp = "db/logs/" + std::to_string(data.id) + ".db";
+			tmp = dbLogs + std::to_string(data.id) + dbExtension;
 			if (createConnection(connection, tmp.c_str(), createLog)) {
 				// create query
 				Date today;
@@ -337,9 +345,9 @@ namespace DB {
 		return true;
 	}
 
-	static void addDeviceLog(int id, Date& date, std::string& logger, std::string log) {
-		sqlite3* connection;
-		std::string tmp = "db/logs/" + std::to_string(id) + ".db";
+	static void addDeviceLog(int id, Date& date, std::string& logger, std::string& log) {
+		sqlite3* connection = nullptr;
+		std::string tmp = dbLogs + std::to_string(id) + dbExtension;
 		if (createConnection(connection, tmp.c_str(), createLog)) {
 			// create query
 			std::string t = "INSERT INTO `log` (`date`, `logger`, `log`) VALUES (" + date.asString() + ", \"" + logger + "\", \"" + log + "\")";
@@ -348,14 +356,13 @@ namespace DB {
 			execQuery(connection, t.c_str());
 
 			// close connection
-			sqlite3_close(connection);
-			connection = nullptr;
+			closeConnection(connection);
 		}
 	}
 
 	static const void updateLog(const int id, const char* t) {
 		sqlite3* connection;
-		std::string tmp = "db/logs/" + std::to_string(id) + ".db";
+		std::string tmp = dbLogs + std::to_string(id) + dbExtension;
 		if (createConnection(connection, tmp.c_str(), createLog)) {
 			// execute query
 			execQuery(connection, t);
@@ -370,7 +377,6 @@ namespace DB {
 struct FilterMenu {
 private:
 	// DB data
-	const char* src = "db/reference.db";
 	sqlite3* connection = nullptr;
 
 public:
@@ -389,7 +395,7 @@ public:
 		// Clear data buffers
 		clearBuffers();
 
-		if (DB::createConnection(connection, src, createRef)) {
+		if (DB::createConnection(connection, dbRef, createRef)) {
 			// Get data from database if there is any
 			sqlite3_stmt* stmt;
 			sqlite3_prepare_v2(connection, "SELECT device_id, device_name, device_in_use, device_location, device_costplace, device_next_checkup FROM reference ORDER BY device_id ASC", -1, &stmt, NULL);
@@ -404,8 +410,7 @@ public:
 			sqlite3_finalize(stmt);
 
 			// Close connection
-			sqlite3_close(connection);
-			connection = nullptr;
+			DB::closeConnection(connection);
 		}
 	}
 
@@ -422,7 +427,6 @@ private:
 
 struct DeviceMenu {
 private:
-	const char* src = "db/reference.db";
 	sqlite3* connection = nullptr;
 public:
 
@@ -449,7 +453,7 @@ public:
 		}
 
 		// Read data if it can be found into DeviceData
-		std::string tmp = "db/costplaces/" + (data.inUse ? data.costplace : unused) + ".db";
+		std::string tmp = dbCostplace + (data.inUse ? data.costplace : unused) + dbExtension;
 		if (DB::createConnection(connection, tmp.c_str(), createDev)) {
 			// Get data from database if there is any
 			sqlite3_stmt* stmt;
@@ -512,7 +516,7 @@ public:
 		}
 
 		// Read data from device logs into DeviceData
-		tmp = "db/logs/" + std::to_string(data.id) + ".db";
+		tmp = dbLogs + std::to_string(data.id) + dbExtension;
 		if (DB::createConnection(connection, tmp.c_str(), createDev)) {
 			// Get data from database if there is any
 			sqlite3_stmt* stmt;
@@ -599,22 +603,27 @@ private:
 };
 
 namespace DB {
-	static void moveDevice(DeviceMenu& old, DeviceMenu& edited) {
-		sqlite3* connection;
+	static void moveDevice(DeviceData& old, DeviceData& edited) {
+		sqlite3* connection = nullptr;
 		std::string tmp;
 		// delete from reference file
-		if (createConnection(connection, "db/reference.db", createRef)) {
-			tmp = "DELETE FROM `reference` WHERE device_id=" + std::to_string(old.data.id);
-			if (DB::execQuery(connection, tmp.c_str())) { printf_s("Deleted %i succesfully", old.data.id); };
+		if (createConnection(connection, dbRef, createRef)) {
+			time_t t = 0;
+			if (edited.externalFrequency && edited.nextExternalCheck.t > frequencyDateOffset[1]) { t = edited.nextExternalCheck.t; }
+			if (edited.internalFrequency && (t == 0 || edited.nextInternalCheck.t < t) && edited.nextInternalCheck.t > frequencyDateOffset[1]) { t = edited.nextInternalCheck.t; }
+			tmp = "UPDATE `reference` SET `device_name`=\"" + edited.name + "\", `device_in_use`=\"" + (edited.inUse ? "1" : "0") + "\", `device_location`=\"" + edited.location + "\", `device_costplace`=\"" + edited.costplace + "\", `device_next_checkup`=\"" + std::to_string(t) + "\" WHERE device_id=" + std::to_string(old.id);
+			execQuery(connection, tmp.c_str());
+			closeConnection(connection);
 		}
 
 		// delete from costplace file
-		tmp = "db/costplaces/" + (old.data.inUse ? old.data.costplace : unused) + ".db";
+		tmp = dbCostplace + (old.inUse ? old.costplace : unused) + dbExtension;
 		if (createConnection(connection, tmp.c_str(), createDev)) {
-			tmp = "DELETE FROM `device` WHERE device_id=" + std::to_string(old.data.id);
-			DB::execQuery(connection, tmp.c_str());
+			tmp = "DELETE FROM `device` WHERE device_id=" + std::to_string(old.id);
+			execQuery(connection, tmp.c_str());
+			closeConnection(connection);
 		}
 
-		DB::addDevice(edited.data, true);
+		addDevice(edited, true);
 	}
 }
