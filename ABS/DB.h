@@ -430,7 +430,7 @@ private:
 	sqlite3* connection = nullptr;
 public:
 
-	DeviceMenu() {}
+	DeviceMenu() { clearBuffers(); }
 	~DeviceMenu() { clearBuffers(); }
 
 	bool isLoaded = false;
@@ -438,7 +438,7 @@ public:
 
 	const bool loadDevice(int id, const FilterMenu& filter) {
 		// Clear data buffers
-		unloadDevice();
+		clearBuffers();
 
 		// Get info from filtermenu
 		for (int i = 0; i < filter.id.size(); i++) {
