@@ -1,0 +1,12 @@
+{
+  "ExtractionTool": 1,
+  "AutomaticExtraction": true,
+  "CMakeCommandsFile": "",
+  "AdditionalPreprocessorDefinitions": "",
+  "AdditionalIncludeDirs": "",
+  "AdditionalForceIncludes": "",
+  "AdditionalCommandLine": "",
+  "EnableWarnings": false,
+  "PDBLocation": "E:\\C++\\ABS\\ABS\\Debug\\cv142.pdb",
+  "ParserOutputFolder": ""
+}

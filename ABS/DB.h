@@ -23,9 +23,8 @@ static const char* dbRef = "db/reference.db";
 struct Date {
 private:
 	tm* d = new tm;
+	time_t t = time(&t);
 public:
-	time_t t = time(&t); // public: only use in frequencyDateOffset
-
 	Date() { update(time(0)); };
 	Date(time_t e) { update(e); };
 	Date(int year, int month, int day) {
@@ -114,15 +113,15 @@ public:
 };
 
 static const time_t frequencyDateOffset[9]{
-	Date::getOffset( 0, 0, 0 + 1).t,
-	Date::getOffset( 0, 0, 1 + 1).t,
-	Date::getOffset( 0, 0, 7 + 1).t,
-	Date::getOffset( 0, 1, 0 + 1).t,
-	Date::getOffset( 0, 3, 0 + 1).t,
-	Date::getOffset( 0, 6, 0 + 1).t,
-	Date::getOffset( 1, 0, 0 + 1).t,
-	Date::getOffset( 5, 0, 0 + 1).t,
-	Date::getOffset(10, 0, 0 + 1).t
+	Date::getOffset( 0, 0, 0 + 1).asInt64(),
+	Date::getOffset( 0, 0, 1 + 1).asInt64(),
+	Date::getOffset( 0, 0, 7 + 1).asInt64(),
+	Date::getOffset( 0, 1, 0 + 1).asInt64(),
+	Date::getOffset( 0, 3, 0 + 1).asInt64(),
+	Date::getOffset( 0, 6, 0 + 1).asInt64(),
+	Date::getOffset( 1, 0, 0 + 1).asInt64(),
+	Date::getOffset( 5, 0, 0 + 1).asInt64(),
+	Date::getOffset(10, 0, 0 + 1).asInt64()
 };
 
 //////////////////
@@ -239,8 +238,8 @@ namespace DB {
 				t += "\", \"";
 
 				time_t tmp = 0;
-				if (data.externalFrequency && data.nextExternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.t; }
-				if (data.internalFrequency && (tmp == 0 || data.nextInternalCheck.t < tmp) && data.nextInternalCheck.t > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.t; }
+				if (data.externalFrequency && data.nextExternalCheck.asInt64() > frequencyDateOffset[1]) { tmp = data.nextExternalCheck.asInt64(); }
+				if (data.internalFrequency && (tmp == 0 || data.nextInternalCheck.asInt64() < tmp) && data.nextInternalCheck.asInt64() > frequencyDateOffset[1]) { tmp = data.nextInternalCheck.asInt64(); }
 				t += std::to_string(tmp);
 				t += "\");";
 
@@ -270,9 +269,9 @@ namespace DB {
 			t += "\", \"";
 			t += data.manufacturer;
 			t += "\", ";
-			t += std::to_string(data.purchaseDate.t);
+			t += std::to_string(data.purchaseDate.asInt64());
 			t += ", ";
-			t += std::to_string(data.warrantyDate.t);
+			t += std::to_string(data.warrantyDate.asInt64());
 			t += ", \"";
 			t += data.department;
 			t += "\", \"";
@@ -294,9 +293,9 @@ namespace DB {
 			t += ", ";
 			t += std::to_string(data.internalFrequency);
 			t += ", ";
-			t += std::to_string(data.lastInternalCheck.t);
+			t += std::to_string(data.lastInternalCheck.asInt64());
 			t += ", ";
-			t += std::to_string(data.nextInternalCheck.t);
+			t += std::to_string(data.nextInternalCheck.asInt64());
 
 			// external check
 			t += ", \"";
@@ -304,17 +303,17 @@ namespace DB {
 			t += "\", ";
 			t += std::to_string(data.externalFrequency);
 			t += ", ";
-			t += std::to_string(data.lastExternalCheck.t); // date
+			t += std::to_string(data.lastExternalCheck.asInt64());
 			t += ", ";
-			t += std::to_string(data.nextExternalCheck.t); // date
+			t += std::to_string(data.nextExternalCheck.asInt64());
 			t += ", \"";
 			t += data.contractDescription;
 
 			// status
 			t += "\", ";
-			t += std::to_string(data.dateOfSetup.t); // date/string?
+			t += std::to_string(data.dateOfSetup.asInt64());
 			t += ", ";
-			t += std::to_string(data.dateOfDecommissioning.t); // date/string?
+			t += std::to_string(data.dateOfDecommissioning.asInt64());
 			t += ", ";
 			t += std::to_string(data.wattage);
 			t += ");";
@@ -609,8 +608,8 @@ namespace DB {
 		// delete from reference file
 		if (createConnection(connection, dbRef, createRef)) {
 			time_t t = 0;
-			if (edited.externalFrequency && edited.nextExternalCheck.t > frequencyDateOffset[1]) { t = edited.nextExternalCheck.t; }
-			if (edited.internalFrequency && (t == 0 || edited.nextInternalCheck.t < t) && edited.nextInternalCheck.t > frequencyDateOffset[1]) { t = edited.nextInternalCheck.t; }
+			if (edited.externalFrequency && edited.nextExternalCheck.asInt64() > frequencyDateOffset[1]) { t = edited.nextExternalCheck.asInt64(); }
+			if (edited.internalFrequency && (t == 0 || edited.nextInternalCheck.asInt64() < t) && edited.nextInternalCheck.asInt64() > frequencyDateOffset[1]) { t = edited.nextInternalCheck.asInt64(); }
 			tmp = "UPDATE `reference` SET `device_name`=\"" + edited.name + "\", `device_in_use`=\"" + (edited.inUse ? "1" : "0") + "\", `device_location`=\"" + edited.location + "\", `device_costplace`=\"" + edited.costplace + "\", `device_next_checkup`=\"" + std::to_string(t) + "\" WHERE device_id=" + std::to_string(old.id);
 			execQuery(connection, tmp.c_str());
 			closeConnection(connection);

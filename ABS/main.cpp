@@ -478,7 +478,7 @@ int main(int, char**) {
                                 ImGui::TableNextColumn();
                                 ImGui::Text(filterMenu.costplace[i].c_str());
                                 ImGui::TableNextColumn();
-                                if (filterMenu.nextCheckup[i].t > frequencyDateOffset[1]) { // Date.t is supposed to be a variable only used within the Date struct, but since the frequencyDateOffset's are the only other place time_t's are used it was easier to have it public
+                                if (filterMenu.nextCheckup[i].asInt64() > frequencyDateOffset[1]) { // Date.t is supposed to be a variable only used within the Date struct, but since the frequencyDateOffset's are the only other place time_t's are used it was easier to have it public
                                     bool bTmp = filterMenu.nextCheckup[i] <= today;
                                     checkBox(filterMenu.nextCheckup[i].asString().c_str(), bTmp, currentID);
                                 } else { ImGui::Text(language.getTranslation("%FILTER_NO_CHECKUPS%").c_str()); }
