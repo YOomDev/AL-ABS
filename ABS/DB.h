@@ -11,10 +11,10 @@ static const char* createRef = "CREATE TABLE IF NOT EXISTS `reference` (`device_
 static const char* createDev = "CREATE TABLE IF NOT EXISTS `device` (`device_id` INT NOT NULL UNIQUE, `model` TEXT, `serial_number` INT, `supplier` TEXT, `manufacturer` TEXT, `purchase_date` BIGINT, `warranty_date` BIGINT, `department` TEXT, `costplace_name` TEXT, `administrator` TEXT, `replacement` TEXT, `has_log` BIT(1), `has_manual` BIT(1), `fitness_freq` INT, `internal_freq` INT, `last_internal_check` BIGINT, `next_internal_check` BIGINT, `external_company` TEXT, `external_freq` INT, `last_external_check` BIGINT, `next_external_check` BIGINT, `contract_desc` TEXT, `setup_date` BIGINT, `decommission_date` BIGINT, `wattage` FLOAT, PRIMARY KEY (`device_id`));";
 static const char* createLog = "CREATE TABLE IF NOT EXISTS `log` (`date` BIGINT NOT NULL UNIQUE, `logger` TEXT NOT NULL, `log` TEXT NOT NULL, PRIMARY KEY (`date`));";
 static const std::string unused = "outOfUse";
-static const char* dbRef = "db/reference.db";
 static const std::string dbCostplace = "db/costplaces/";
 static const std::string dbLogs = "db/logs/";
 static const std::string dbExtension = ".db";
+static const char* dbRef = "db/reference.db";
 
 ///////////
 // Dates //
@@ -202,8 +202,8 @@ struct EditDeviceDates {
 namespace DB {
 	static const bool execQuery(sqlite3*& con, const char* t) {
 		int sc = 0;
-		if ((sc = sqlite3_exec(con, t, nullptr, nullptr, nullptr)) != SQLITE_OK) { printf_s("[DB-QUERY-ERROR] %i\n", sc); return false; }
-		return true;
+		if ((sc = sqlite3_exec(con, t, nullptr, nullptr, nullptr)) != SQLITE_OK) { printf_s("[DB-QUERY-ERROR] %i\n", sc); }
+		return sc == SQLITE_OK;
 	}
 
 	static bool createConnection(sqlite3*& con, const char* src, const char* create) {
@@ -320,7 +320,7 @@ namespace DB {
 			t += ");";
 
 			// execute query
-			execQuery(connection, t.c_str());
+			if (!execQuery(connection, t.c_str())) { return false; }
 
 			// close connection
 			closeConnection(connection);
@@ -335,7 +335,7 @@ namespace DB {
 				std::string t = "INSERT INTO `log` (`date`, `logger`, `log`) VALUES (" + today.asString() + ", \"ABS\", \"Created device entry\")";
 
 				// execute query
-				execQuery(connection, t.c_str());
+				if (!execQuery(connection, t.c_str())) { return false; }
 
 				// close connection
 				sqlite3_close(connection);

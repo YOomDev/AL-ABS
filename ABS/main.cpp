@@ -1,12 +1,18 @@
+// ImGui for UI
 #include "ImGui/imgui.h" // ImGui functions
 #include "ImGui/backends/imgui_impl_dx9.h" // ImGui backend
 #include "ImGui/backends/imgui_impl_win32.h" // ImGui backend
 #include "ImGui/misc/cpp/imgui_stdlib.h" // inputText std::string as buffer
-
 #include <d3d9.h> // Used for graphics device to display Dear ImGui
-#include <tchar.h> // _T() ???
+
+// Program libraries
+#include <tchar.h> // _T() -> char16t for wstring (16bit per char instead of 8)
 #include "DB.h" // My database library
-#include "Language.h"
+#include "Language.h" // My translation library 
+
+// Debugging
+#include <stdlib.h>
+#include <crtdbg.h>
 
 //////////
 // TODO //
@@ -15,7 +21,7 @@
 /*
 * 
 * BUGS:
-* after editing a device date/frequency it saves a wrong number
+* Input fields leak a small amount of memeory every time the screen is drawn, no memory is leaked after exiting the program
 * 
 * TODO:
 * Implement admin adding a device the normal way
@@ -107,30 +113,30 @@ static void addDevice(int id) {
 };
 
 // GUI macros
-static inline void checkBox(const std::string& label, bool& value, int& counter) {
+static inline void checkBox(const char* label, bool& value, int& counter) {
     ImGui::PushID(counter);
-    ImGui::Checkbox(label.c_str(), &value);
+    ImGui::Checkbox(label, &value);
     ImGui::PopID();
     counter++;
 }
 
-static inline void checkBox(const std::string& label, unsigned short& value, int& counter) {
+static inline void checkBox(const char* label, unsigned short& value, int& counter) {
     ImGui::PushID(counter);
-    ImGui::Checkbox(label.c_str(), (bool*)&value);
+    ImGui::Checkbox(label, (bool*)&value);
     ImGui::PopID();
     counter++;
 }
 
-static inline void intInput(const std::string& label, int& value, int& counter) {
+static inline void intInput(const char* label, int& value, int& counter) {
     ImGui::PushID(counter);
-    ImGui::InputInt(label.c_str(), &value);
+    ImGui::InputInt(label, &value);
     ImGui::PopID();
     counter++;
 }
 
-static inline void textInput(const std::string& label, std::string& value, int& counter) {
+static inline void textInput(const char* label, std::string& value, int& counter) {
     ImGui::PushID(counter);
-    ImGui::InputText(label.c_str(), &value);
+    ImGui::InputText(label, &value);
     ImGui::PopID();
     counter++;
 }
@@ -143,17 +149,17 @@ static inline void dateInput(Date& date, std::string& str, const char* label, in
     date.fromStr(str);
 };
 
-static inline bool button(const std::string& label, int& counter) {
+static inline bool button(const char* label, int& counter) {
     ImGui::PushID(counter);
-    bool output = ImGui::Button(label.c_str());
+    bool output = ImGui::Button(label);
     ImGui::PopID();
     counter++;
     return output;
 }
 
-static inline bool selectable(const std::string& label, bool isActive, int& counter) {
+static inline bool selectable(const char* label, bool isActive, int& counter) {
     ImGui::PushID(counter);
-    bool output = ImGui::Selectable(label.c_str(), isActive);
+    bool output = ImGui::Selectable(label, isActive);
     ImGui::PopID();
     counter++;
     return output;
@@ -161,6 +167,9 @@ static inline bool selectable(const std::string& label, bool isActive, int& coun
 
 // Main code
 int main(int, char**) {
+    // Mem leaks debugging
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ABS AgroLab v0.1"), NULL };
@@ -389,11 +398,11 @@ int main(int, char**) {
 
                         // Location
                         ImGui::TableNextColumn();
-                        for (int i = 0; i < locations.size(); i++) { checkBox(locations[i], locationFilter.at(i), currentID); }
+                        for (int i = 0; i < locations.size(); i++) { checkBox(locations[i].c_str(), locationFilter.at(i), currentID); }
 
                         // Cost place
                         ImGui::TableNextColumn();
-                        for (int i = 0; i < costPlaces.size(); i++) { checkBox(costPlaces[i], costplaceFilter.at(i), currentID); }
+                        for (int i = 0; i < costPlaces.size(); i++) { checkBox(costPlaces[i].c_str(), costplaceFilter.at(i), currentID); }
 
                         // Checkup
                         ImGui::TableNextColumn();
@@ -471,7 +480,7 @@ int main(int, char**) {
                                 ImGui::TableNextColumn();
                                 if (filterMenu.nextCheckup[i].t > frequencyDateOffset[1]) { // Date.t is supposed to be a variable only used within the Date struct, but since the frequencyDateOffset's are the only other place time_t's are used it was easier to have it public
                                     bool bTmp = filterMenu.nextCheckup[i] <= today;
-                                    checkBox(filterMenu.nextCheckup[i].asString(), bTmp, currentID);
+                                    checkBox(filterMenu.nextCheckup[i].asString().c_str(), bTmp, currentID);
                                 } else { ImGui::Text(language.getTranslation("%FILTER_NO_CHECKUPS%").c_str()); }
                                 displayedDevices = true;
                             }
@@ -604,7 +613,7 @@ int main(int, char**) {
 
                             bool used = deviceData.inUse;
                             ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_IN_USE%").c_str());
-                            ImGui::TableNextColumn(); checkBox((std::string) "", used, currentID);
+                            ImGui::TableNextColumn(); checkBox("", used, currentID);
                             ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_DATE_SETUP%").c_str());
                             ImGui::TableNextColumn(); ImGui::Text(deviceData.dateOfSetup.asString().c_str());
                             ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_DATE_DECOMISSION%").c_str());
@@ -640,9 +649,9 @@ int main(int, char**) {
                     if (screen != CurrentScreen::ADMIN) { screen = CurrentScreen::ADMIN; }
                     if (editDevice.isLoaded && adminScreen != AdminScreen::EDIT) { adminDevice.unloadDevice(); editDevice.unloadDevice(); }
 
-                    if (button(language.getTranslation("%ADMIN_EDIT%").c_str(), currentID)) { adminScreen = AdminScreen::EDIT; adminDevice.unloadDevice(); }
-                    ImGui::SameLine(); if (button(language.getTranslation("%ADMIN_ADD%").c_str(), currentID)) { adminScreen = AdminScreen::ADD; adminDevice.unloadDevice(); }
-                    ImGui::SameLine(); if (button(language.getTranslation("%ADMIN_DECOMISSION%").c_str(), currentID)) { adminScreen = AdminScreen::DECOMMISSION; adminDevice.unloadDevice(); }
+                    if (button(language.getTranslation("%ADMIN_EDIT%").c_str(), currentID)) { adminScreen = AdminScreen::EDIT; adminDevice.unloadDevice(); editDevice.unloadDevice(); }
+                    ImGui::SameLine(); if (button(language.getTranslation("%ADMIN_ADD%").c_str(), currentID)) { adminScreen = AdminScreen::ADD; adminDevice.unloadDevice(); editDevice.unloadDevice(); }
+                    ImGui::SameLine(); if (button(language.getTranslation("%ADMIN_DECOMISSION%").c_str(), currentID)) { adminScreen = AdminScreen::DECOMMISSION; adminDevice.unloadDevice(); editDevice.unloadDevice(); }
                     ImGui::Separator();
                     switch (adminScreen) {
                     case AdminScreen::EDIT: {
@@ -798,7 +807,101 @@ int main(int, char**) {
                         break;
                     } 
                     case AdminScreen::ADD: {
-                        ImGui::Text("Adding screen has not been implemented yet");
+                        ImGui::Text((language.getTranslation("%ADMIN_DEVICE_ID_HEADER%") + " ?").c_str());
+                        if (ImGui::BeginTable("Device", 1, tableFlags)) {
+                            ImGui::TableSetupColumn(language.getTranslation("%DEVICE_EDIT%").c_str());
+                            ImGui::TableHeadersRow();
+                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_INSTRUMENT%").c_str(), editData.name, currentID);
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_MODEL%").c_str(), editData.model, currentID);
+                            ImGui::TableNextColumn(); intInput(language.getTranslation("%DEVICE_SERIAL_NUMBER%").c_str(), editData.serialnumber, currentID);
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_SUPPLIER%").c_str(), editData.supplier, currentID);
+
+                            ImGui::TableNextColumn(); dateInput(editData.purchaseDate, adminEditDevice.purchaseDateString, language.getTranslation("%DEVICE_DATE_PURCHASE%").c_str(), currentID);
+                            ImGui::TableNextColumn(); dateInput(editData.warrantyDate, adminEditDevice.warrantyDateString, language.getTranslation("%DEVICE_DATE_WARRANTY%").c_str(), currentID);
+
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_MANUFACTURER%").c_str(), editData.manufacturer, currentID);
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_DEPARTMENT%").c_str(), editData.department, currentID);
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_COSTPLACE%").c_str(), editData.costplace, currentID);
+                            ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_COSTPLACE_NAME%").c_str(), editData.costplaceName, currentID);
+
+                            ImGui::EndTable();
+                        }
+
+                        ImGui::Text(language.getTranslation("%DEVICE_INTERNAL_CHECK%").c_str());
+                        if (ImGui::BeginTable("Internal", 1, tableFlags)) {
+                            ImGui::TableSetupColumn(language.getTranslation("%DEVICE_EDIT%").c_str());
+                            ImGui::TableHeadersRow();
+                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                            ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_INTERNAL_CHECK_FREQUENCY%").c_str());
+                            ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editData.internalFrequency]).c_str());
+                            ImGui::SameLine(); if (button("+", currentID)) { editData.internalFrequency++; editData.internalFrequency %= 9; }
+                            ImGui::SameLine(); if (button("-", currentID)) { editData.internalFrequency--; while (editData.internalFrequency < 0) { editData.internalFrequency += 9; } }
+                            if (editData.internalFrequency) {
+                                ImGui::TableNextColumn(); dateInput(editData.lastInternalCheck, adminEditDevice.lastInternalCheckString, language.getTranslation("%DEVICE_INTERNAL_CHECK_LAST_HEADER%").c_str(), currentID);
+                                ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_INTERNAL_CHECK_NEXT_HEADER%").c_str() + (editData.nextInternalCheck = editData.lastInternalCheck + frequencyDateOffset[editData.internalFrequency]).asString()).c_str());
+                            }
+
+                            ImGui::EndTable();
+                        }
+
+                        ImGui::Text(language.getTranslation("%DEVICE_EXTERNAL_CHECK%").c_str());
+                        if (ImGui::BeginTable("External", 1, tableFlags)) {
+                            ImGui::TableSetupColumn(language.getTranslation("%DEVICE_EDIT%").c_str());
+                            ImGui::TableHeadersRow();
+                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                            ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_EXTERNAL_CHECK_FREQUENCY%").c_str());
+                            ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editData.externalFrequency]).c_str());
+                            ImGui::SameLine(); if (button("+", currentID)) { editData.externalFrequency++; editData.externalFrequency %= 9; }
+                            ImGui::SameLine(); if (button("-", currentID)) { editData.externalFrequency--; while (editData.externalFrequency < 0) { editData.externalFrequency += 9; } }
+
+                            if (editData.externalFrequency) {
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_COMPANY%").c_str(), editData.externalCompany, currentID);
+                                ImGui::TableNextColumn(); dateInput(editData.lastExternalCheck, adminEditDevice.lastExternalCheckString, language.getTranslation("%DEVICE_EXTERNAL_CHECK_LAST%").c_str(), currentID);
+                                ImGui::TableNextColumn(); ImGui::Text((language.getTranslation("%DEVICE_EXTERNAL_CHECK_NEXT_HEADER%") + " " + (editData.nextExternalCheck = editData.lastExternalCheck + frequencyDateOffset[editData.externalFrequency]).asString()).c_str());
+                                ImGui::TableNextColumn(); textInput(language.getTranslation("%DEVICE_EXTERNAL_CHECK_CONTRACT%").c_str(), editData.contractDescription, currentID);
+                            }
+
+                            ImGui::EndTable();
+                        }
+
+                        ImGui::Text(language.getTranslation("%DEVICE_ADMINISTRATION%").c_str());
+                        if (ImGui::BeginTable("Administration", 1, tableFlags)) {
+                            ImGui::TableSetupColumn(language.getTranslation("%DEVICE_EDIT%").c_str());
+                            ImGui::TableHeadersRow();
+                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                            ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_USEABILITY_CHECK_FREQUENCY%").c_str());
+                            ImGui::TableNextColumn(); ImGui::Text(language.getTranslation(frequencyNotation[editData.useabilityFrequency]).c_str());
+                            ImGui::SameLine(); if (button("+", currentID)) { editData.useabilityFrequency++; editData.useabilityFrequency %= 9; }
+                            ImGui::SameLine(); if (button("-", currentID)) { editData.useabilityFrequency--; while (editData.useabilityFrequency < 0) { editData.useabilityFrequency += 9; } }
+
+                            ImGui::EndTable();
+                        }
+
+                        ImGui::Text(language.getTranslation("%DEVICE_STATUS%").c_str());
+                        if (ImGui::BeginTable("Status", 1, tableFlags)) {
+                            ImGui::TableSetupColumn(language.getTranslation("%DEVICE_EDIT%").c_str());
+                            ImGui::TableHeadersRow();
+                            ImGui::TableNextRow(ImGuiTableRowFlags_None, 20);
+
+                            ImGui::TableNextColumn(); checkBox(language.getTranslation("%DEVICE_IN_USE%").c_str(), editData.inUse, currentID);
+                            ImGui::TableNextColumn(); dateInput(editData.dateOfSetup, adminEditDevice.dateOfSetupString, language.getTranslation("%DEVICE_DATE_SETUP%").c_str(), currentID);
+                            ImGui::TableNextColumn(); dateInput(editData.dateOfDecommissioning, adminEditDevice.dateOfDecommissioningString, language.getTranslation("%DEVICE_DATE_DECOMISSION%").c_str(), currentID);
+                            ImGui::TableNextColumn(); ImGui::InputFloat(language.getTranslation("%DEVICE_WATTAGE%").c_str(), &editData.wattage);
+
+                            ImGui::EndTable();
+                        }
+
+                        if (button(language.getTranslation("%DEVICE_SAVE%").c_str(), currentID)) {
+                            editData.id = current;
+                            while (!DB::addDevice(editData, false)) { editData.id++; }
+                            current = editData.id + 1;
+                            printf_s("Device added with id %i\n", editData.id);
+                        }
                         break;
                     }
                     case AdminScreen::DECOMMISSION: {
@@ -909,7 +1012,7 @@ int main(int, char**) {
 
                                     bool used = adminData.inUse;
                                     ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_IN_USE%").c_str());
-                                    ImGui::TableNextColumn(); checkBox(emptyString, used, currentID);
+                                    ImGui::TableNextColumn(); checkBox(emptyString.c_str(), used, currentID);
                                     ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_DATE_SETUP%").c_str());
                                     ImGui::TableNextColumn(); ImGui::Text(adminData.dateOfSetup.asString().c_str());
                                     ImGui::TableNextColumn(); ImGui::Text(language.getTranslation("%DEVICE_DATE_DECOMISSION%").c_str());
@@ -955,9 +1058,7 @@ int main(int, char**) {
 
                     ImGui::Separator();
                     ImGui::Text("Testing buttons");
-                    if (button("Add device", currentID)) { addDevice(current); current++; }
                     if (button("Add 100 devices", currentID)) { for (int i = 0; i < 100; i++) { addDevice(current); current++; } }
-                    if (button("Add 1000 devices", currentID)) { for (int i = 0; i < 1000; i++) { addDevice(current); current++; } }
 
                     ImGui::EndTabItem();
                 }
@@ -1008,6 +1109,7 @@ int main(int, char**) {
     ::DestroyWindow(hwnd);
     ::UnregisterClass(wc.lpszClassName, wc.hInstance);
 
+    _CrtDumpMemoryLeaks();
     return 0;
 }
 
