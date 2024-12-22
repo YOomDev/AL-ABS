@@ -10,6 +10,3 @@ Apache-2.0 License
 
 # Original intent for creation
 This program was meant to be used in-house for AgroLab's Dr. Verwey location, but was never taken into use and will thus be supplied as-is for anyone to use.
-
-
-
