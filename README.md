@@ -8,5 +8,8 @@ Apache-2.0 License
 - Dear ImGui
 - SQLite 3
 
-# Intent of use
-This program is only meant to be used for AgroLab, mainly for the Verwey location, it can be used later on by other locations but it is a inhouse program for now until further notice.
+# Original intent for creation
+This program was meant to be used in-house for AgroLab's Dr. Verwey location, but was never taken into use and will thus be supplied as-is for anyone to use.
+
+
+
